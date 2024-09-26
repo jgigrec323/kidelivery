@@ -2,8 +2,10 @@ import { View, Text } from "react-native";
 import React from "react";
 import Logo from "@/components/logo";
 import DashboardBlock from "./dashboard-block";
+import { useUser } from "@clerk/clerk-expo";
 
 const Dashboard = () => {
+  const { user } = useUser();
   return (
     <View className="bg-orange h-[34%] rounded-bl-xl rounded-br-xl">
       <Logo

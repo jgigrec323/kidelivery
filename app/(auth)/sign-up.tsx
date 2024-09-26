@@ -1,5 +1,13 @@
-import React from "react";
-import { TextInput, Button, View, Text, Pressable } from "react-native";
+import React, { useState } from "react";
+import axios from "axios";
+import {
+  TextInput,
+  View,
+  Text,
+  Pressable,
+  ActivityIndicator,
+  Alert,
+} from "react-native";
 import { useSignUp } from "@clerk/clerk-expo";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -13,31 +21,67 @@ export default function SignUpScreen() {
   const { isLoaded, signUp, setActive } = useSignUp();
   const router = useRouter();
 
-  const [firstName, setFirstName] = React.useState("");
-  const [lastName, setLastName] = React.useState("");
-  const [phoneNumber, setPhoneNumber] = React.useState("");
-  const [commune, setCommune] = React.useState("");
-  const [quartier, setQuartier] = React.useState(""); // State for quartier
-  const [boutiqueAddress, setBoutiqueAddress] = React.useState("");
-  const [pendingVerification, setPendingVerification] = React.useState(false);
-  const [code, setCode] = React.useState("");
+  const [shopName, setShopName] = useState("");
+  const [name, setName] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [commune, setCommune] = useState("");
+  const [quartier, setQuartier] = useState("");
+  const [shopAddress, setShopAddress] = useState("");
+  const [pendingVerification, setPendingVerification] = useState(false);
+  const [code, setCode] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Checkbox states
-  const [isTermsAccepted, setIsTermsAccepted] = React.useState(false);
-  const [isPrivacyAccepted, setIsPrivacyAccepted] = React.useState(false);
+  const [isTermsAccepted, setIsTermsAccepted] = useState(false);
+  const [isPrivacyAccepted, setIsPrivacyAccepted] = useState(false);
+
+  const validateForm = () => {
+    // Ensure no field is empty
+    if (
+      !shopName ||
+      !name ||
+      !phoneNumber ||
+      !commune ||
+      !quartier ||
+      !shopAddress
+    ) {
+      Alert.alert("Erreur", "Veuillez remplir tous les champs.");
+      return false;
+    }
+
+    // Check if the phone number starts with the Guinea country code +224
+    /* if (!phoneNumber.startsWith("+224")) {
+      Alert.alert(
+        "Erreur",
+        "Le numéro de téléphone doit commencer par +224 (Guinée)."
+      );
+      return false;
+    } */
+
+    // Ensure terms and privacy policy are accepted
+    if (!isTermsAccepted || !isPrivacyAccepted) {
+      Alert.alert(
+        "Erreur",
+        "Vous devez accepter les Conditions d'utilisation et la Politique de confidentialité."
+      );
+      return false;
+    }
+
+    return true;
+  };
 
   const onSignUpPress = async () => {
     if (!isLoaded) {
       return;
     }
 
+    if (!validateForm()) {
+      return;
+    }
+
     try {
       await signUp.create({
-        firstName,
-        lastName,
         phoneNumber,
-        commune,
-        boutiqueAddress,
+        firstName: name, // Set Clerk's firstName to the user's full name
       });
 
       await signUp.preparePhoneNumberVerification({ strategy: "phone_code" });
@@ -51,58 +95,77 @@ export default function SignUpScreen() {
     if (!isLoaded) {
       return;
     }
-
     try {
+      setIsLoading(true);
       const completeSignUp = await signUp.attemptPhoneNumberVerification({
         code,
       });
 
       if (completeSignUp.status === "complete") {
         await setActive({ session: completeSignUp.createdSessionId });
-        router.push("/(home)/(tabs)");
+
+        // Send the user details to your backend
+        await axios.post(`http://192.168.1.104:3000/api/v1/users/register`, {
+          name,
+          phoneNumber,
+        });
+
+        router.push("/(home)/(tabs)"); // Navigate to the next page
       } else {
         console.error(JSON.stringify(completeSignUp, null, 2));
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error(JSON.stringify(err, null, 2));
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Disable the signup button if terms or privacy policy are not accepted
   const isButtonDisabled = !isTermsAccepted || !isPrivacyAccepted;
 
   if (pendingVerification) {
     return (
-      <View>
-        <Text>Verify your phone number</Text>
-        <TextInput
-          value={code}
-          placeholder="Code..."
-          onChangeText={(code) => setCode(code)}
-        />
-        <Button title="Verify" onPress={onPressVerify} />
-      </View>
+      <SafeAreaView className="bg-white h-full">
+        <CustomHeader h={120} title="Vérifiez votre numéro de téléphone" />
+        <View className="pt-8 px-7">
+          <TextInput
+            className="mb-8 border py-3 px-4 rounded-md text-lg"
+            value={code}
+            placeholder="Code..."
+            onChangeText={(code) => setCode(code)}
+          />
+          <Pressable
+            className={`bg-black w-full py-3 mb-7 flex items-center rounded-md ${
+              !code ? "opacity-50" : ""
+            }`}
+            onPress={onPressVerify}
+            disabled={!code}
+          >
+            <Text className="text-white text-xl">Vérifier</Text>
+          </Pressable>
+        </View>
+
+        {isLoading && <ActivityIndicator size="large" color={COLORS.orange} />}
+      </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView className="bg-white h-full">
-      <CustomHeader h={100} title="S'inscrire"></CustomHeader>
+      <CustomHeader h={100} title="S'inscrire" />
       <View className="mt-10 px-5">
-        <View className=" space-y-5">
+        <View className="space-y-5">
           <TextInput
             className="border py-3 px-4 rounded-md text-lg"
-            value={firstName}
+            value={shopName}
             placeholder="Nom de la boutique"
-            onChangeText={(firstName) => setFirstName(firstName)}
+            onChangeText={setShopName}
           />
-          {/* Commune Picker */}
           <View className="border rounded-md">
             <Picker
               selectedValue={commune}
-              onValueChange={(itemValue) => setCommune(itemValue)}
+              onValueChange={setCommune}
               className="border rounded-md text-lg"
-              style={{ borderColor: "red" }}
             >
               <Picker.Item label="Sélectionner une commune" value="" />
               {communes.map((commune) => (
@@ -115,14 +178,12 @@ export default function SignUpScreen() {
             </Picker>
           </View>
 
-          {/* Quartier Picker */}
           {commune && (
             <View className="border rounded-md">
               <Picker
                 selectedValue={quartier}
-                onValueChange={(itemValue) => setQuartier(itemValue)}
+                onValueChange={setQuartier}
                 className="border rounded-md text-lg"
-                style={{ borderColor: "red" }}
               >
                 <Picker.Item label="Sélectionner un quartier" value="" />
                 {communes
@@ -139,32 +200,29 @@ export default function SignUpScreen() {
           )}
 
           <TextInput
-            multiline={true}
+            multiline
             className="border py-3 px-4 rounded-md text-lg"
-            value={boutiqueAddress}
+            value={shopAddress}
             placeholder="Adresse de la boutique"
-            onChangeText={(boutiqueAddress) =>
-              setBoutiqueAddress(boutiqueAddress)
-            }
+            onChangeText={setShopAddress}
           />
         </View>
 
         <View className="mt-5 space-y-5">
           <TextInput
             className="border py-3 px-4 rounded-md text-lg"
-            value={lastName}
+            value={name}
             placeholder="Nom complet"
-            onChangeText={(lastName) => setLastName(lastName)}
+            onChangeText={setName}
           />
           <TextInput
             className="border py-3 px-4 rounded-md text-lg"
             value={phoneNumber}
-            placeholder="Phone Number"
-            onChangeText={(phoneNumber) => setPhoneNumber(phoneNumber)}
+            placeholder="Numéro de téléphone (+224)"
+            onChangeText={setPhoneNumber}
           />
         </View>
 
-        {/* Terms of Service and Privacy Policy Checkboxes */}
         <View className="mt-5">
           <View className="flex flex-row items-center">
             <CheckBox
