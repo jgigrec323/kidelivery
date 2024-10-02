@@ -1,4 +1,4 @@
-import { View, TouchableOpacity, StyleSheet } from "react-native";
+import { View, TouchableOpacity } from "react-native";
 import React from "react";
 import COLORS from "@/constants/Colors";
 import { Ionicons } from "@expo/vector-icons";
@@ -7,18 +7,17 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 const TabBar = ({ state, descriptors, navigation }) => {
   const icons = {
-    index: (isFocused: boolean) => (
+    index: (isFocused) => (
       <MaterialCommunityIcons
         name="home-variant"
         size={25}
         color={isFocused ? COLORS.orange : COLORS.black}
       />
     ),
-    create: (isFocused: boolean) => (
+    create: (isFocused) => (
       <View
         style={{ backgroundColor: COLORS.orange }}
-        className="  h-14 w-14 
-      justify-center items-center rounded-full -translate-y-5"
+        className="h-14 w-14 justify-center items-center rounded-full -translate-y-5"
       >
         <Feather
           name="box"
@@ -27,7 +26,7 @@ const TabBar = ({ state, descriptors, navigation }) => {
         />
       </View>
     ),
-    profile: (isFocused: boolean) => (
+    profile: (isFocused) => (
       <Ionicons
         name="person"
         size={25}
@@ -35,6 +34,13 @@ const TabBar = ({ state, descriptors, navigation }) => {
       />
     ),
   };
+
+  const isMiddleTabActive = state.routes[state.index].name === "create";
+
+  // Hide the TabBar if the middle tab is active
+  if (isMiddleTabActive) {
+    return null; // Don't render the tab bar
+  }
 
   return (
     <View className="flex items-center">
@@ -76,8 +82,6 @@ const TabBar = ({ state, descriptors, navigation }) => {
               target: route.key,
             });
           };
-
-          const isMiddleTab = route.name === "create";
 
           return (
             <TouchableOpacity

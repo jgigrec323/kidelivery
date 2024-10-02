@@ -7,6 +7,7 @@ import {
   Pressable,
   ActivityIndicator,
   Alert,
+  ScrollView,
 } from "react-native";
 import { useSignUp } from "@clerk/clerk-expo";
 import { useRouter } from "expo-router";
@@ -30,6 +31,7 @@ export default function SignUpScreen() {
   const [pendingVerification, setPendingVerification] = useState(false);
   const [code, setCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = React.useState<string | null>(null);
 
   const [isTermsAccepted, setIsTermsAccepted] = useState(false);
   const [isPrivacyAccepted, setIsPrivacyAccepted] = useState(false);
@@ -87,7 +89,9 @@ export default function SignUpScreen() {
       await signUp.preparePhoneNumberVerification({ strategy: "phone_code" });
       setPendingVerification(true);
     } catch (err: any) {
-      console.error(JSON.stringify(err, null, 2));
+      setError(
+        "Le code de vérification n'a pas été envoyé. Veuillez réessayer."
+      );
     }
   };
 
@@ -105,17 +109,24 @@ export default function SignUpScreen() {
         await setActive({ session: completeSignUp.createdSessionId });
 
         // Send the user details to your backend
-        await axios.post(`http://192.168.1.104:3000/api/v1/users/register`, {
-          name,
-          phoneNumber,
-        });
+        const result = await axios.post(
+          `http://192.168.1.104:3000/api/v1/users/register`,
+          {
+            name,
+            phoneNumber,
+            shopName,
+            shopCommune: commune,
+            shopQuartier: quartier,
+            shopAddress,
+          }
+        );
 
-        router.push("/(home)/(tabs)"); // Navigate to the next page
+        if (result.status === 200) router.push("/(home)/(tabs)"); // Navigate to the next page
       } else {
-        console.error(JSON.stringify(completeSignUp, null, 2));
+        setError("Vérification incomplète. Veuillez vérifier le code.");
       }
     } catch (err) {
-      console.error(JSON.stringify(err, null, 2));
+      setError("La vérification a échoué. Veuillez réessayer.");
     } finally {
       setIsLoading(false);
     }
@@ -153,108 +164,112 @@ export default function SignUpScreen() {
   return (
     <SafeAreaView className="bg-white h-full">
       <CustomHeader h={100} title="S'inscrire" />
-      <View className="mt-10 px-5">
-        <View className="space-y-5">
-          <TextInput
-            className="border py-3 px-4 rounded-md text-lg"
-            value={shopName}
-            placeholder="Nom de la boutique"
-            onChangeText={setShopName}
-          />
-          <View className="border rounded-md">
-            <Picker
-              selectedValue={commune}
-              onValueChange={setCommune}
-              className="border rounded-md text-lg"
-            >
-              <Picker.Item label="Sélectionner une commune" value="" />
-              {communes.map((commune) => (
-                <Picker.Item
-                  label={commune.name}
-                  value={commune.name}
-                  key={commune.name}
-                />
-              ))}
-            </Picker>
-          </View>
-
-          {commune && (
+      <ScrollView>
+        <View className="mt-10 px-5">
+          <View className="space-y-5">
+            <TextInput
+              className="border py-3 px-4 rounded-md text-lg"
+              value={shopName}
+              placeholder="Nom de la boutique"
+              onChangeText={setShopName}
+            />
             <View className="border rounded-md">
               <Picker
-                selectedValue={quartier}
-                onValueChange={setQuartier}
+                selectedValue={commune}
+                onValueChange={setCommune}
                 className="border rounded-md text-lg"
               >
-                <Picker.Item label="Sélectionner un quartier" value="" />
-                {communes
-                  .find((c) => c.name === commune)
-                  ?.quartiers.map((quartier) => (
-                    <Picker.Item
-                      label={quartier}
-                      value={quartier}
-                      key={quartier}
-                    />
-                  ))}
+                <Picker.Item label="Sélectionner une commune" value="" />
+                {communes.map((commune) => (
+                  <Picker.Item
+                    label={commune.name}
+                    value={commune.name}
+                    key={commune.name}
+                  />
+                ))}
               </Picker>
             </View>
-          )}
 
-          <TextInput
-            multiline
-            className="border py-3 px-4 rounded-md text-lg"
-            value={shopAddress}
-            placeholder="Adresse de la boutique"
-            onChangeText={setShopAddress}
-          />
-        </View>
+            {commune && (
+              <View className="border rounded-md">
+                <Picker
+                  selectedValue={quartier}
+                  onValueChange={setQuartier}
+                  className="border rounded-md text-lg"
+                >
+                  <Picker.Item label="Sélectionner un quartier" value="" />
+                  {communes
+                    .find((c) => c.name === commune)
+                    ?.quartiers.map((quartier) => (
+                      <Picker.Item
+                        label={quartier}
+                        value={quartier}
+                        key={quartier}
+                      />
+                    ))}
+                </Picker>
+              </View>
+            )}
 
-        <View className="mt-5 space-y-5">
-          <TextInput
-            className="border py-3 px-4 rounded-md text-lg"
-            value={name}
-            placeholder="Nom complet"
-            onChangeText={setName}
-          />
-          <TextInput
-            className="border py-3 px-4 rounded-md text-lg"
-            value={phoneNumber}
-            placeholder="Numéro de téléphone (+224)"
-            onChangeText={setPhoneNumber}
-          />
-        </View>
-
-        <View className="mt-5">
-          <View className="flex flex-row items-center">
-            <CheckBox
-              value={isTermsAccepted}
-              onValueChange={setIsTermsAccepted}
-              color={isTermsAccepted ? COLORS.orange : undefined}
+            <TextInput
+              multiline
+              className="border py-3 px-4 rounded-md text-lg"
+              value={shopAddress}
+              placeholder="Adresse de la boutique"
+              onChangeText={setShopAddress}
             />
-            <Text className="ml-2">J'accepte les Conditions d'utilisation</Text>
           </View>
 
-          <View className="flex flex-row items-center mt-3">
-            <CheckBox
-              value={isPrivacyAccepted}
-              onValueChange={setIsPrivacyAccepted}
-              color={isPrivacyAccepted ? COLORS.orange : undefined}
+          <View className="mt-5 space-y-5">
+            <TextInput
+              className="border py-3 px-4 rounded-md text-lg"
+              value={name}
+              placeholder="Nom complet"
+              onChangeText={setName}
             />
-            <Text className="ml-2">
-              J'accepte la Politique de confidentialité
-            </Text>
+            <TextInput
+              className="border py-3 px-4 rounded-md text-lg"
+              value={phoneNumber}
+              placeholder="Numéro de téléphone (+224)"
+              onChangeText={setPhoneNumber}
+            />
           </View>
-        </View>
 
-        <Pressable
-          className={`mt-8 bg-black w-full py-3 mb-7 flex items-center rounded-md ${
-            isButtonDisabled ? "opacity-50" : ""
-          }`}
-          onPress={onSignUpPress}
-          disabled={isButtonDisabled}
-        >
-          <Text className="text-white text-xl">S'inscrire</Text>
-        </Pressable>
-      </View>
+          <View className="mt-5">
+            <View className="flex flex-row items-center">
+              <CheckBox
+                value={isTermsAccepted}
+                onValueChange={setIsTermsAccepted}
+                color={isTermsAccepted ? COLORS.orange : undefined}
+              />
+              <Text className="ml-2">
+                J'accepte les Conditions d'utilisation
+              </Text>
+            </View>
+
+            <View className="flex flex-row items-center mt-3">
+              <CheckBox
+                value={isPrivacyAccepted}
+                onValueChange={setIsPrivacyAccepted}
+                color={isPrivacyAccepted ? COLORS.orange : undefined}
+              />
+              <Text className="ml-2">
+                J'accepte la Politique de confidentialité
+              </Text>
+            </View>
+          </View>
+
+          <Pressable
+            className={`mt-8 bg-black w-full py-3 mb-7 flex items-center rounded-md ${
+              isButtonDisabled ? "opacity-50" : ""
+            }`}
+            onPress={onSignUpPress}
+            disabled={isButtonDisabled}
+          >
+            <Text className="text-white text-xl">S'inscrire</Text>
+          </Pressable>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
