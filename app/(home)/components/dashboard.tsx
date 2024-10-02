@@ -3,9 +3,11 @@ import React from "react";
 import Logo from "@/components/logo";
 import DashboardBlock from "./dashboard-block";
 import { useUser } from "@clerk/clerk-expo";
+import { getFirstName } from "@/utils/getFirstName";
 
 const Dashboard = () => {
   const { user } = useUser();
+  const username = getFirstName(user?.fullName);
   return (
     <View className="bg-orange h-[34%] rounded-bl-xl rounded-br-xl">
       <Logo
@@ -15,7 +17,7 @@ const Dashboard = () => {
 
       <View className="p-7">
         <Text className="text-white text-lg">
-          Bienvenue <Text className="font-bold">Ibrahima</Text>
+          Bienvenue <Text className="font-bold">{username}</Text>
         </Text>
         <View
           style={{ columnGap: 10 }}

@@ -232,6 +232,7 @@ export default function SignUpScreen() {
               value={phoneNumber}
               placeholder="Numéro de téléphone (+224)"
               onChangeText={setPhoneNumber}
+              keyboardType="phone-pad"
             />
           </View>
 

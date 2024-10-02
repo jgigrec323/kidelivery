@@ -12,7 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import CustomHeader from "@/components/custom-header";
 import COLORS from "@/constants/Colors";
 
-export default function Page() {
+export default function SignInScreen() {
   const { isLoaded, signIn, setActive } = useSignIn();
   const [verifying, setVerifying] = React.useState(false);
   const [phone, setPhone] = React.useState("");
@@ -98,6 +98,7 @@ export default function Page() {
             value={code}
             placeholder="Code..."
             onChangeText={(code) => setCode(code)}
+            keyboardType="phone-pad"
           />
           {error && (
             <Text className="mt-2" style={{ color: "red" }}>
