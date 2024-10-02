@@ -4,7 +4,6 @@ import { Link, useRouter } from "expo-router";
 import {
   Text,
   TextInput,
-  Button,
   View,
   ActivityIndicator,
   Pressable,

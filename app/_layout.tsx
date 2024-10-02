@@ -1,6 +1,8 @@
 import * as SecureStore from "expo-secure-store";
 import { ClerkProvider, ClerkLoaded } from "@clerk/clerk-expo";
 import { Slot } from "expo-router";
+import { Provider } from "react-redux";
+import { store } from "@/store";
 
 export default function RootLayout() {
   const tokenCache = {
@@ -37,10 +39,12 @@ export default function RootLayout() {
   }
 
   return (
-    <ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey}>
-      <ClerkLoaded>
-        <Slot />
-      </ClerkLoaded>
-    </ClerkProvider>
+    <Provider store={store}>
+      <ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey}>
+        <ClerkLoaded>
+          <Slot />
+        </ClerkLoaded>
+      </ClerkProvider>
+    </Provider>
   );
 }
