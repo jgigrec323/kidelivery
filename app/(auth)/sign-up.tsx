@@ -17,6 +17,7 @@ import CustomHeader from "@/components/custom-header";
 import { Picker } from "@react-native-picker/picker";
 import CheckBox from "expo-checkbox"; // Import CheckBox from expo-checkbox
 import { communes } from "@/utils/communesGn";
+import config from "@/utils/config";
 
 export default function SignUpScreen() {
   const { isLoaded, signUp, setActive } = useSignUp();
@@ -106,11 +107,10 @@ export default function SignUpScreen() {
       });
 
       if (completeSignUp.status === "complete") {
-        await setActive({ session: completeSignUp.createdSessionId });
-
         // Send the user details to your backend
+        //+15555550100
         const result = await axios.post(
-          `http://192.168.1.104:3000/api/v1/users/register`,
+          `${config.API_BASE_URL}/users/register`,
           {
             name,
             phoneNumber,
@@ -120,6 +120,8 @@ export default function SignUpScreen() {
             shopAddress,
           }
         );
+
+        await setActive({ session: completeSignUp.createdSessionId });
 
         if (result.status === 200) router.push("/(home)/(tabs)"); // Navigate to the next page
       } else {

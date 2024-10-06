@@ -3,7 +3,21 @@ import React from "react";
 import Entypo from "@expo/vector-icons/Entypo";
 import COLORS from "@/constants/Colors";
 import ProgressBar from "./progress-bar";
+import { useSelector } from "react-redux";
+import { selectMostRecentInTransitParcel } from "@/store/slices/parcelSlice";
 const BeingShippedBox = () => {
+  const mostRecentInTransitParcel = useSelector(
+    selectMostRecentInTransitParcel
+  );
+
+  if (!mostRecentInTransitParcel) {
+    return (
+      <View className="flex justify-center items-center h-16">
+        <Text>Aucune livraison en cours</Text>
+      </View>
+    );
+  }
+
   return (
     <View className="bg-black rounded-[30px] py-[15px] px-7">
       <View className="flex flex-row justify-between items-center">
