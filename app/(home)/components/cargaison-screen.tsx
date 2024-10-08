@@ -5,6 +5,8 @@ import {
   TouchableOpacity,
   ScrollView,
   Pressable,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { Picker } from "@react-native-picker/picker";
@@ -12,12 +14,17 @@ import { communes } from "@/utils/communesGn";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useNavigation } from "@react-navigation/native";
 import COLORS from "@/constants/Colors";
+import config from "@/utils/config";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
 
 export default function CargaisonScreen() {
   const [communePickup, setCommunePickup] = useState("");
   const [quartierPickup, setQuartierPickup] = useState("");
   const [communeDelivery, setCommuneDelivery] = useState("");
   const [quartierDelivery, setQuartierDelivery] = useState("");
+
+  const [description, setDescription] = useState(""); // For adding description
 
   const [pickupDate, setPickupDate] = useState(new Date());
   const [pickupTime, setPickupTime] = useState(new Date());
@@ -28,8 +35,10 @@ export default function CargaisonScreen() {
   const [showPickupTimePicker, setShowPickupTimePicker] = useState(false);
   const [showDeliveryDatePicker, setShowDeliveryDatePicker] = useState(false);
   const [showDeliveryTimePicker, setShowDeliveryTimePicker] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const navigation = useNavigation();
+  const user = useSelector((state: RootState) => state.auth);
 
   useEffect(() => {
     navigation.setOptions({ tabBarVisible: false });
@@ -64,6 +73,83 @@ export default function CargaisonScreen() {
     }
   };
 
+  // Validation
+  const validateForm = (): boolean => {
+    if (!communePickup || !quartierPickup) {
+      Alert.alert("Error", "Please select a pickup location.");
+      return false;
+    }
+    if (!communeDelivery || !quartierDelivery) {
+      Alert.alert("Error", "Please select a delivery location.");
+      return false;
+    }
+    if (!description.trim()) {
+      Alert.alert("Error", "Please provide a description for the cargaison.");
+      return false;
+    }
+    return true;
+  };
+
+  // Submit handler
+  const handleSubmit = async () => {
+    if (!validateForm()) return;
+
+    setLoading(true);
+
+    const payload = {
+      name: "Cargaison", // Name for the cargaison request
+      description: description.trim(), // Use description input
+      parcelType: "CARGO", // Cargaison type
+      senderCommune: communePickup,
+      senderQuartier: quartierPickup,
+      pickupDate: pickupDate.toISOString(),
+      pickupTime: pickupTime.toLocaleTimeString(),
+      deliveryCommune: communeDelivery,
+      deliveryQuartier: quartierDelivery,
+      dropoffDate: deliveryDate.toISOString(),
+      dropoffTime: deliveryTime.toLocaleTimeString(),
+      isFeeAtDoor: false, // Assuming no fee at door for Cargaison
+      feeAtDoor: 0,
+      shopId: user.shops[0]?.id || "", // Safe access with fallback
+      userId: user.id || "", // Safe access with fallback
+    };
+
+    try {
+      const response = await fetch(`${config.API_BASE_URL}/requests`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.ok) {
+        Alert.alert("Success", "Cargaison request created successfully!");
+        // Reset form after successful submission
+        setCommunePickup("");
+        setQuartierPickup("");
+        setCommuneDelivery("");
+        setQuartierDelivery("");
+        setPickupDate(new Date());
+        setPickupTime(new Date());
+        setDeliveryDate(new Date());
+        setDeliveryTime(new Date());
+        setDescription(""); // Reset description
+        navigation.goBack(); // Go back to the previous screen
+      } else {
+        Alert.alert("Error", "Failed to create the cargaison request.");
+      }
+    } catch (error) {
+      Alert.alert(
+        "Error",
+        "An error occurred while creating the cargaison request."
+      );
+      console.error("Error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <View className="flex-1 mt-4">
       <ScrollView className="mb-44">
@@ -73,13 +159,15 @@ export default function CargaisonScreen() {
             className="bg-grayLight py-3 px-4 rounded-md text-lg text-black"
             placeholder="Colis"
             placeholderTextColor={"black"}
-            onChangeText={() => {}}
+            value="Cargaison"
+            editable={false} // Fixed name for Cargaison
           />
           <TextInput
             className="bg-grayLight py-3 px-4 rounded-md text-lg text-black"
             placeholder="Description"
             placeholderTextColor={"black"}
-            onChangeText={() => {}}
+            value={description}
+            onChangeText={setDescription}
           />
         </View>
 
@@ -250,13 +338,19 @@ export default function CargaisonScreen() {
         </Text>
 
         {/* Button to make request */}
-        <View className="mt-10 w-full px-3 py-3 flex flex-row justify-center">
-          <Pressable
-            className="bg-black px-4 h-12 w-full flex items-center justify-center rounded-xl"
-            onPress={() => {}}
+        <View className="mt-8">
+          <TouchableOpacity
+            onPress={handleSubmit}
+            className="bg-orange py-3 rounded-lg"
           >
-            <Text className="text-white font-bold text-lg">Enregistrer</Text>
-          </Pressable>
+            {loading ? (
+              <ActivityIndicator size="large" color={COLORS.white} />
+            ) : (
+              <Text className="text-center text-white font-semibold">
+                Valider la commande
+              </Text>
+            )}
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </View>

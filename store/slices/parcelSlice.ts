@@ -23,6 +23,7 @@ const parcelSlice = createSlice({
   name: "parcels",
   initialState,
   reducers: {
+    // Set all parcels and update counts
     setParcels: (state, action: PayloadAction<Parcel[]>) => {
       state.parcels = action.payload;
       state.totalParcels = action.payload.length;
@@ -31,6 +32,7 @@ const parcelSlice = createSlice({
       state.deliveredCount = 0;
       state.returnedCount = 0;
 
+      // Update parcel counts by status
       action.payload.forEach((parcel) => {
         const status = parcel.status;
         if (status === "PENDING") {
@@ -44,6 +46,8 @@ const parcelSlice = createSlice({
         }
       });
     },
+
+    // Update the status of a specific parcel
     updateParcelStatus: (
       state,
       action: PayloadAction<{ id: string; status: ParcelStatus }>
@@ -51,9 +55,26 @@ const parcelSlice = createSlice({
       const { id, status } = action.payload;
       const parcel = state.parcels.find((parcel) => parcel.id === id);
       if (parcel) {
-        parcel.status = status;
+        // Update counts if status changes
+        if (parcel.status !== status) {
+          // Decrement the old status count
+          if (parcel.status === "PENDING") state.pendingCount -= 1;
+          if (parcel.status === "IN_TRANSIT") state.inTransitCount -= 1;
+          if (parcel.status === "DELIVERED") state.deliveredCount -= 1;
+          if (parcel.status === "RETURNED") state.returnedCount -= 1;
+
+          // Increment the new status count
+          if (status === "PENDING") state.pendingCount += 1;
+          if (status === "IN_TRANSIT") state.inTransitCount += 1;
+          if (status === "DELIVERED") state.deliveredCount += 1;
+          if (status === "RETURNED") state.returnedCount += 1;
+        }
+
+        parcel.status = status; // Update the status
       }
     },
+
+    // Clear all parcels
     clearParcels: (state) => {
       state.parcels = [];
       state.pendingCount = 0;
@@ -79,7 +100,12 @@ export const selectThreeMostRecentParcels = (state: {
 export const selectMostRecentInTransitParcel = (state: {
   parcels: ParcelState;
 }) => {
-  return state.parcels.parcels.find((parcel) => parcel.status === "IN_TRANSIT");
+  return state.parcels.parcels
+    .filter((parcel) => parcel.status === "IN_TRANSIT")
+    .sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    )[0];
 };
 
 // 3. Selector for the 3 most recent 'DELIVERED' parcels
@@ -88,6 +114,10 @@ export const selectThreeMostRecentDeliveredParcels = (state: {
 }) => {
   return state.parcels.parcels
     .filter((parcel) => parcel.status === "DELIVERED")
+    .sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    )
     .slice(0, 3);
 };
 

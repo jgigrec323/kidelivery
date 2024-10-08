@@ -14,12 +14,7 @@ import { RootState } from "@/store";
 const Dashboard = () => {
   const { user } = useUser();
   const username = getFirstName(user?.fullName);
-  const dispatch = useDispatch();
   const parcels = useSelector((state: RootState) => state.parcels);
-
-  useEffect(() => {
-    console.log(parcels);
-  }, [dispatch]);
 
   return (
     <View className="bg-orange h-[34%] rounded-bl-xl rounded-br-xl">
