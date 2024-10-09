@@ -15,6 +15,18 @@ export default function Layout() {
           headerShown: false,
         }}
       />
+      <Stack.Screen
+        name="finances"
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="contactus"
+        options={{
+          headerShown: false,
+        }}
+      />
     </Stack>
   );
 }

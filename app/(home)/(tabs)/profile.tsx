@@ -10,13 +10,13 @@ import { useUser } from "@clerk/clerk-expo";
 import { SafeAreaView } from "react-native-safe-area-context";
 import CustomHeader from "@/components/custom-header";
 import COLORS from "@/constants/Colors";
-import { useNavigation } from "@react-navigation/native";
+import { Ionicons } from "@expo/vector-icons";
 import { getInitials } from "@/utils/getInitials";
+import { router } from "expo-router";
 
 const Profile = () => {
   const { isLoaded, isSignedIn, user } = useUser();
   const [isNotificationsEnabled, setIsNotificationsEnabled] = useState(false);
-  const navigation = useNavigation();
   const initials = getInitials(user?.fullName || "K");
 
   const toggleNotifications = () => {
@@ -61,7 +61,14 @@ const Profile = () => {
 
         {/* Notifications */}
         <View className="flex-row items-center justify-between bg-gray-100 py-1.5 px-4 rounded-md mb-3">
-          <Text className="text-lg">Notifications</Text>
+          <View className="flex-row items-center">
+            <Ionicons
+              name="notifications-outline"
+              size={22}
+              color={COLORS.black}
+            />
+            <Text className="text-lg ml-2">Notifications</Text>
+          </View>
           <Switch
             value={isNotificationsEnabled}
             onValueChange={toggleNotifications}
@@ -70,39 +77,41 @@ const Profile = () => {
           />
         </View>
 
-        {/* Account Settings */}
+        {/* Comptabilité */}
         <TouchableOpacity
-          className="bg-gray-100 py-3 px-4 rounded-md mb-3"
-          onPress={() => navigation.navigate("AccountSettings")}
+          className="bg-gray-100 py-3 px-4 rounded-md mb-3 flex-row items-center"
+          onPress={() => router.navigate("/(home)/(screens)/finances")}
         >
-          <Text className="text-lg">Paramètres du compte</Text>
+          <Ionicons name="calculator-outline" size={22} color={COLORS.black} />
+          <Text className="text-lg ml-3">Comptabilité</Text>
         </TouchableOpacity>
 
-        {/* My Contacts */}
+        {/* History */}
         <TouchableOpacity
-          className="bg-gray-100 py-3 px-4 rounded-md mb-3"
-          onPress={() => navigation.navigate("MyContacts")}
+          className="bg-gray-100 py-3 px-4 rounded-md mb-3 flex-row items-center"
+          onPress={() => router.navigate("/(home)/(screens)/history")}
         >
-          <Text className="text-lg">Mes contacts</Text>
+          <Ionicons name="time-outline" size={22} color={COLORS.black} />
+          <Text className="text-lg ml-3">Historique</Text>
+        </TouchableOpacity>
+
+        {/* Account Settings */}
+        <TouchableOpacity
+          className="bg-gray-100 py-3 px-4 rounded-md mb-3 flex-row items-center"
+          onPress={() => router.navigate("/(home)/(screens)/settings")}
+        >
+          <Ionicons name="settings-outline" size={22} color={COLORS.black} />
+          <Text className="text-lg ml-3">Paramètres du compte</Text>
         </TouchableOpacity>
 
         {/* Contact Us */}
         <TouchableOpacity
-          className="bg-gray-100 py-3 px-4 rounded-md mb-3"
-          onPress={() => navigation.navigate("ContactUs")}
+          className="bg-gray-100 py-3 px-4 rounded-md mb-3 flex-row items-center"
+          onPress={() => router.navigate("/(home)/(screens)/contactus")}
         >
-          <Text className="text-lg">Contactez nous</Text>
+          <Ionicons name="mail-outline" size={22} color={COLORS.black} />
+          <Text className="text-lg ml-3">Contactez nous</Text>
         </TouchableOpacity>
-
-        {/* Log Out and Delete Account Buttons */}
-        {/*  <TouchableOpacity className="bg-red-500 py-3 px-4 rounded-md mb-3">
-          <Text className="text-lg text-white text-center">Se déconnecter</Text>
-        </TouchableOpacity>
-        <TouchableOpacity className="bg-red-500 py-3 px-4 rounded-md">
-          <Text className="text-lg text-white text-center">
-            Supprimer mon compte
-          </Text>
-        </TouchableOpacity> */}
       </View>
     </SafeAreaView>
   );
