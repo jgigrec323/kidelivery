@@ -4,19 +4,13 @@ export default function Layout() {
   return (
     <Stack>
       <Stack.Screen
-        name="index"
+        name="history"
         options={{
           headerShown: false,
         }}
       />
       <Stack.Screen
-        name="(tabs)"
-        options={{
-          headerShown: false,
-        }}
-      />
-      <Stack.Screen
-        name="(screens)"
+        name="settings"
         options={{
           headerShown: false,
         }}

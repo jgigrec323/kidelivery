@@ -24,6 +24,7 @@ import {
   clearParcels,
 } from "@/store/slices/parcelSlice";
 import { useFocusEffect } from "@react-navigation/native"; // Import this hook
+import { router } from "expo-router";
 
 const Home = () => {
   const { user } = useUser();
@@ -85,7 +86,9 @@ const Home = () => {
               <BeingShippedBox></BeingShippedBox>
               <View className="flex flex-row justify-between items-center">
                 <MainTitle title="Historique"></MainTitle>
-                <Pressable>
+                <Pressable
+                  onPress={() => router.navigate("/(home)/(screens)/history")}
+                >
                   <Text style={{ color: COLORS.grayDark }}>Voir tout</Text>
                 </Pressable>
               </View>

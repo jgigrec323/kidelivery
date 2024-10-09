@@ -121,6 +121,10 @@ export const selectThreeMostRecentDeliveredParcels = (state: {
     .slice(0, 3);
 };
 
+export const selectAllParcels = (state: { parcels: ParcelState }) => {
+  return state.parcels.parcels;
+};
+
 export const { setParcels, updateParcelStatus, clearParcels } =
   parcelSlice.actions;
 export default parcelSlice.reducer;

@@ -4,17 +4,18 @@ import COLORS from "@/constants/Colors";
 import { Ionicons } from "@expo/vector-icons";
 import { Feather } from "@expo/vector-icons";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { BottomTabBarProps } from "@react-navigation/bottom-tabs"; // Importing the correct type for the tab bar
 
-const TabBar = ({ state, descriptors, navigation }) => {
+const TabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
   const icons = {
-    index: (isFocused) => (
+    index: (isFocused: boolean) => (
       <MaterialCommunityIcons
         name="home-variant"
         size={25}
         color={isFocused ? COLORS.orange : COLORS.black}
       />
     ),
-    create: (isFocused) => (
+    create: (isFocused: boolean) => (
       <View
         style={{ backgroundColor: COLORS.orange }}
         className="h-14 w-14 justify-center items-center rounded-full -translate-y-5"
@@ -26,7 +27,7 @@ const TabBar = ({ state, descriptors, navigation }) => {
         />
       </View>
     ),
-    profile: (isFocused) => (
+    profile: (isFocused: boolean) => (
       <Ionicons
         name="person"
         size={25}
@@ -93,7 +94,7 @@ const TabBar = ({ state, descriptors, navigation }) => {
               onPress={onPress}
               onLongPress={onLongPress}
             >
-              {icons[route.name](isFocused)}
+              {icons[route.name as keyof typeof icons](isFocused)}
             </TouchableOpacity>
           );
         })}

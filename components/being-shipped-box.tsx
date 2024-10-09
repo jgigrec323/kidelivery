@@ -5,11 +5,15 @@ import COLORS from "@/constants/Colors";
 import ProgressBar from "./progress-bar";
 import { useSelector } from "react-redux";
 import { selectMostRecentInTransitParcel } from "@/store/slices/parcelSlice";
+import { formatDate } from "@/utils/formatDate";
+
 const BeingShippedBox = () => {
+  // Fetching the most recent parcel in transit from Redux
   const mostRecentInTransitParcel = useSelector(
     selectMostRecentInTransitParcel
   );
 
+  // If there is no parcel in transit, render a placeholder
   if (!mostRecentInTransitParcel) {
     return (
       <View className="flex justify-center items-center h-16">
@@ -18,30 +22,62 @@ const BeingShippedBox = () => {
     );
   }
 
+  // Destructuring the parcel data
+  const {
+    trackingNumber,
+    pickupDate,
+    senderQuartier,
+    dropoffDate,
+    deliveryQuartier,
+  } = mostRecentInTransitParcel;
+
   return (
     <View className="bg-black rounded-[30px] py-[15px] px-7">
+      {/* Display tracking number */}
       <View className="flex flex-row justify-between items-center">
-        <Text className="text-white font-bold text-lg">#JKLO258496</Text>
+        <Text className="text-white font-bold text-lg">
+          {trackingNumber ? `${trackingNumber}` : "Tracking Unavailable"}
+        </Text>
+
         <Pressable
           style={{ backgroundColor: COLORS.grayDark, columnGap: 5 }}
-          className="flex flex-row justify-center items-center  rounded-full w-20 h-5"
+          className="flex flex-row justify-center items-center rounded-full w-20 h-5"
+          onPress={() => {
+            // Add logic to navigate to the tracking page or any other action
+            console.log(`Tracking ${trackingNumber}`);
+          }}
         >
           <Text className="text-white text-xs">Suivre</Text>
           <Entypo name="chevron-right" size={12} color="white" />
         </Pressable>
       </View>
+
+      {/* Display progress bar */}
       <View>
-        <ProgressBar></ProgressBar>
+        <ProgressBar />
+
+        {/* Pickup and Delivery Information */}
         <View className="flex flex-row justify-between mt-4">
           <View>
-            <Text style={{ color: COLORS.grayDark }}>15 Mai 2024</Text>
-            <Text style={{ color: COLORS.white }}>Kaloum</Text>
-          </View>
-          <View className="flex items-end">
+            {/* Pickup date and location */}
             <Text style={{ color: COLORS.grayDark }}>
-              Estimated: 16 Mai 2024
+              {pickupDate ? formatDate(pickupDate) : "Date Unavailable"}
             </Text>
-            <Text style={{ color: COLORS.white }}>Coyah</Text>
+            <Text style={{ color: COLORS.white }}>
+              {senderQuartier || "Location Unavailable"}
+            </Text>
+          </View>
+
+          <View className="flex items-end">
+            {/* Estimated delivery date and location */}
+            <Text style={{ color: COLORS.grayDark }}>
+              {dropoffDate
+                ? `Estimated: ${formatDate(dropoffDate)}`
+                : "Estimation Unavailable"}
+            </Text>
+            <Text style={{ color: COLORS.white }}>
+              {deliveryQuartier || "Location Unavailable"}
+            </Text>
           </View>
         </View>
       </View>
