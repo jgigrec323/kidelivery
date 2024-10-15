@@ -18,6 +18,7 @@ import { useSelector } from "react-redux";
 import { RootState } from "@/store"; // Assuming your Redux store has a RootState type
 import COLORS from "@/constants/Colors";
 import { router } from "expo-router";
+import { calculateDeliveryFee } from "@/utils/calculateFee";
 
 export default function SingleScreen() {
   const user = useSelector((state: RootState) => state.auth);
@@ -56,6 +57,19 @@ export default function SingleScreen() {
   useEffect(() => {
     navigation.setOptions({ tabBarVisible: false });
   }, []);
+
+  useEffect(() => {
+    if (communePickup && communeDelivery) {
+      const calculatedFee = calculateDeliveryFee({
+        senderCommune: communePickup,
+        deliveryCommune: communeDelivery,
+        parcelType: "SINGLE",
+      });
+      setPrice(calculatedFee);
+    } else {
+      setPrice(0); // Reset to 0 if communes are not selected
+    }
+  }, [communePickup, communeDelivery]);
 
   const formattedPickupDateTime = `${pickupDate.toISOString().split("T")[0]}T${
     pickupTime.toTimeString().split(" ")[0]
@@ -397,6 +411,18 @@ export default function SingleScreen() {
               onChangeText={setFeeAmount}
             />
           )}
+        </View>
+
+        <View className="mt-4 p-3 bg-gray-100 rounded-md">
+          <Text className="text-lg font-semibold text-black">
+            Coût de la livraison
+          </Text>
+          <Text className="text-xl font-bold text-orange mt-1">
+            {price.toLocaleString()} GNF
+          </Text>
+          <Text className="text-gray-500 text-sm">
+            Le coût est calculé en fonction de la distance entre les communes.
+          </Text>
         </View>
 
         <View className="mt-8">

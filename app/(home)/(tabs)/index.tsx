@@ -17,13 +17,15 @@ import { useDispatch, useSelector } from "react-redux";
 import axios from "axios";
 import config from "@/utils/config";
 import { setUser } from "@/store/slices/authSlice";
-import { Parcel, User } from "@/utils/types";
+import { Parcel, User, Order, Delivery } from "@/utils/types";
 import {
   selectThreeMostRecentParcels,
   setParcels,
   clearParcels,
 } from "@/store/slices/parcelSlice";
-import { useFocusEffect } from "@react-navigation/native"; // Import this hook
+import { setOrders, clearOrders } from "@/store/slices/orderSlice";
+import { setDeliveries, clearDeliveries } from "@/store/slices/deliverySlice";
+import { useFocusEffect } from "@react-navigation/native";
 import { router } from "expo-router";
 
 const Home = () => {
@@ -31,44 +33,69 @@ const Home = () => {
   const threeMostRecentParcels = useSelector(selectThreeMostRecentParcels);
   const phone = user?.primaryPhoneNumber?.toString();
   const dispatch = useDispatch();
-
   const [refreshing, setRefreshing] = useState(false);
 
-  // Function to fetch parcels and update Redux store
-  const fetchParcels = async () => {
-    dispatch(clearParcels());
-
-    const response = await axios.get<User>(
-      `${config.API_BASE_URL}/users/${phone}`
-    );
-    const user = response.data;
+  // Helper function to set user data
+  const setUserData = (userData: User) => {
     dispatch(
       setUser({
-        id: user.id,
-        phoneNumber: user.phoneNumber,
-        fullName: user.name,
-        shops: user.shops,
+        id: userData.id,
+        phoneNumber: userData.phoneNumber,
+        fullName: userData.name,
+        shops: userData.shops,
       })
     );
-
-    const parcelsRep = await axios.get<Parcel[]>(
-      `${config.API_BASE_URL}/requests/${user.id}`
-    );
-    const parcels = parcelsRep.data;
-    dispatch(setParcels(parcels));
   };
 
-  // Fetch parcels when the screen is focused
+  // Fetch all data (user, parcels, orders, deliveries)
+  const fetchData = async () => {
+    try {
+      // Clear slices before fetching
+      dispatch(clearParcels());
+      dispatch(clearOrders());
+      dispatch(clearDeliveries());
+
+      // 1. Fetch user information
+      const userResponse = await axios.get<User>(
+        `${config.API_BASE_URL}/users/${phone}`
+      );
+      const userData = userResponse.data;
+      setUserData(userData);
+
+      // 2. Fetch parcels
+      const parcelsResponse = await axios.get<Parcel[]>(
+        `${config.API_BASE_URL}/requests/${userData.id}`
+      );
+      dispatch(setParcels(parcelsResponse.data));
+
+      // 3. Fetch orders
+      const ordersResponse = await axios.get<Order[]>(
+        `${config.API_BASE_URL}/orders/${userData.id}`
+      );
+      dispatch(setOrders(ordersResponse.data));
+
+      // 4. Fetch deliveries
+      const deliveriesResponse = await axios.get<Delivery[]>(
+        `${config.API_BASE_URL}/deliveries/${userData.id}`
+      );
+      dispatch(setDeliveries(deliveriesResponse.data));
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  };
+
+  // Use focus effect to fetch data whenever the screen is focused
   useFocusEffect(
     useCallback(() => {
-      fetchParcels();
-    }, []) // Empty dependency array ensures this only runs when the screen is focused
+      fetchData();
+    }, [])
   );
 
+  // Handle refresh
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchParcels(); // Refresh data
-    setRefreshing(false); // Stop the refreshing indicator
+    await fetchData();
+    setRefreshing(false);
   };
 
   return (
@@ -80,36 +107,34 @@ const Home = () => {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
         >
-          <View className="pt-4 px-4">
-            <View style={{ display: "flex", rowGap: 10 }}>
-              <MainTitle title="En cours d'expédition"></MainTitle>
-              <BeingShippedBox></BeingShippedBox>
-              <View className="flex flex-row justify-between items-center">
-                <MainTitle title="Historique"></MainTitle>
-                <Pressable
-                  onPress={() => router.navigate("/(home)/(screens)/history")}
-                >
-                  <Text style={{ color: COLORS.grayDark }}>Voir tout</Text>
-                </Pressable>
-              </View>
-              <View style={{ rowGap: 10 }} className="">
-                {threeMostRecentParcels.length === 0 && (
-                  <View className="flex items-center justify-center h-16">
-                    <Text>Vous n'avez pas encore commandé</Text>
-                  </View>
-                )}
+          <View className="pt-4 px-4 space-y-4">
+            <MainTitle title="En cours d'expédition" />
+            <BeingShippedBox />
 
-                {threeMostRecentParcels.map((parcel) => {
-                  return (
-                    <AlreadyShippedBox
-                      name={parcel.name}
-                      id={parcel.trackingNumber}
-                      status={parcel.status}
-                      key={parcel.id}
-                    ></AlreadyShippedBox>
-                  );
-                })}
-              </View>
+            <View className="flex flex-row justify-between items-center">
+              <MainTitle title="Historique" />
+              <Pressable
+                onPress={() => router.navigate("/(home)/(screens)/history")}
+              >
+                <Text className="text-gray-dark">Voir tout</Text>
+              </Pressable>
+            </View>
+
+            <View className="space-y-4">
+              {threeMostRecentParcels.length === 0 ? (
+                <View className="flex items-center justify-center h-16">
+                  <Text>Vous n'avez pas encore commandé</Text>
+                </View>
+              ) : (
+                threeMostRecentParcels.map((parcel) => (
+                  <AlreadyShippedBox
+                    key={parcel.id}
+                    name={parcel.name}
+                    id={parcel.trackingNumber}
+                    status={parcel.status}
+                  />
+                ))
+              )}
             </View>
           </View>
         </ScrollView>
