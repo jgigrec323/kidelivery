@@ -23,6 +23,8 @@ import {
   startOfYear,
   endOfYear,
   format,
+  subDays,
+  isSameDay,
 } from "date-fns";
 import { LineChart } from "react-native-chart-kit";
 import { fetchOrders, fetchDeliveries } from "@/utils/fetchData";
@@ -164,12 +166,20 @@ const Finances = () => {
   };
 
   const getDisplayDate = () => {
-    return selectedRange === "DAY"
-      ? `${format(startDate, "dd/MM/yyyy")}`
-      : `${format(startDate, "dd/MM/yyyy")} au ${format(
-          endDate,
-          "dd/MM/yyyy"
-        )}`;
+    const today = new Date();
+    const yesterday = subDays(today, 1);
+    if (isSameDay(startDate, today)) {
+      return "Aujourd'hui";
+    } else if (isSameDay(startDate, yesterday)) {
+      return "Hier";
+    } else {
+      return selectedRange === "DAY"
+        ? `Le: ${format(startDate, "dd/MM/yyyy")}`
+        : `Du: ${format(startDate, "dd/MM/yyyy")} au ${format(
+            endDate,
+            "dd/MM/yyyy"
+          )}`;
+    }
   };
 
   return (

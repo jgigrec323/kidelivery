@@ -27,6 +27,24 @@ export default function Layout() {
           headerShown: false,
         }}
       />
+      <Stack.Screen
+        name="change-name"
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="change-phone"
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="manage-shops"
+        options={{
+          headerShown: false,
+        }}
+      />
     </Stack>
   );
 }
