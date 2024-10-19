@@ -22,6 +22,7 @@ import {
   isSameDay,
 } from "date-fns";
 import CustomHeader from "@/components/custom-header";
+import { router } from "expo-router";
 
 const History = () => {
   const [selectedRange, setSelectedRange] = useState<
@@ -29,6 +30,7 @@ const History = () => {
   >("DAY");
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(new Date());
+  const [selectedStatus, setSelectedStatus] = useState<string | null>(null); // For filtering by status, null for "All"
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isStartDatePicker, setIsStartDatePicker] = useState(true);
   const navigation = useNavigation();
@@ -97,22 +99,21 @@ const History = () => {
     }
   };
 
+  // Filter parcels by date range and selected status
   const filteredParcels = parcels.filter((parcel) => {
     const parcelDate = new Date(parcel.createdAt);
-    return parcelDate >= startDate && parcelDate <= endDate;
+    const isInRange = parcelDate >= startDate && parcelDate <= endDate;
+    const isInStatus = selectedStatus ? parcel.status === selectedStatus : true; // Filter by status if selected
+    return isInRange && isInStatus;
   });
 
   const parcelCounts = {
-    total: filteredParcels.length,
-    pending: filteredParcels.filter((parcel) => parcel.status === "PENDING")
+    total: parcels.length,
+    pending: parcels.filter((parcel) => parcel.status === "PENDING").length,
+    inTransit: parcels.filter((parcel) => parcel.status === "IN_TRANSIT")
       .length,
-    inTransit: filteredParcels.filter(
-      (parcel) => parcel.status === "IN_TRANSIT"
-    ).length,
-    delivered: filteredParcels.filter((parcel) => parcel.status === "DELIVERED")
-      .length,
-    returned: filteredParcels.filter((parcel) => parcel.status === "RETURNED")
-      .length,
+    delivered: parcels.filter((parcel) => parcel.status === "DELIVERED").length,
+    returned: parcels.filter((parcel) => parcel.status === "RETURNED").length,
   };
 
   const getProgress = (status: string) => {
@@ -155,7 +156,7 @@ const History = () => {
       </View>
 
       {/* Range Selection Buttons */}
-      <View className="flex-row justify-around mb-4 mx-4">
+      <View className="flex-row justify-around  mx-4">
         {["DAY", "WEEK", "MONTH", "YEAR"].map((range) => (
           <TouchableOpacity
             key={range}
@@ -188,39 +189,58 @@ const History = () => {
         <Text className="text-lg font-bold text-black mb-2">
           Total: {parcelCounts.total} livraisons
         </Text>
-        <View className="flex-row flex-wrap justify-between mt-2">
-          <View className="flex-row items-center space-x-2 p-2 bg-gray-100 rounded-full mb-2">
+        <View className="flex flex-row flex-wrap   mt-2">
+          <TouchableOpacity
+            className="flex-row items-center space-x-2 p-2 bg-gray-100 rounded-full mb-2"
+            onPress={() => setSelectedStatus(null)} // Show all parcels
+          >
+            <Ionicons name="layers-outline" size={22} color={COLORS.orange} />
+            <Text className="text-gray-700">Tous ({parcelCounts.total})</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            className="flex-row items-center space-x-2 p-2 bg-gray-100 rounded-full mb-2"
+            onPress={() => setSelectedStatus("PENDING")} // Filter by pending
+          >
             <Ionicons name="time-outline" size={22} color={COLORS.orange} />
             <Text className="text-gray-700">
-              {parcelCounts.pending} En attente
+              En attente ({parcelCounts.pending})
             </Text>
-          </View>
-          <View className="flex-row items-center space-x-2 p-2 bg-gray-100 rounded-full mb-2">
+          </TouchableOpacity>
+          <TouchableOpacity
+            className="flex-row items-center space-x-2 p-2 bg-gray-100 rounded-full mb-2"
+            onPress={() => setSelectedStatus("IN_TRANSIT")} // Filter by in transit
+          >
             <Ionicons name="bicycle-outline" size={22} color={COLORS.orange} />
             <Text className="text-gray-700">
-              {parcelCounts.inTransit} En transit
+              En transit ({parcelCounts.inTransit})
             </Text>
-          </View>
-          <View className="flex-row items-center space-x-2 p-2 bg-gray-100 rounded-full mb-2">
+          </TouchableOpacity>
+          <TouchableOpacity
+            className="flex-row items-center space-x-2 p-2 bg-gray-100 rounded-full mb-2"
+            onPress={() => setSelectedStatus("DELIVERED")} // Filter by delivered
+          >
             <Ionicons
               name="checkmark-done-outline"
               size={22}
               color={COLORS.orange}
             />
             <Text className="text-gray-700">
-              {parcelCounts.delivered} Livré
+              Livré ({parcelCounts.delivered})
             </Text>
-          </View>
-          <View className="flex-row items-center space-x-2 p-2 bg-gray-100 rounded-full mb-2">
+          </TouchableOpacity>
+          <TouchableOpacity
+            className="flex-row items-center space-x-2 p-2 bg-gray-100 rounded-full mb-2"
+            onPress={() => setSelectedStatus("RETURNED")} // Filter by returned
+          >
             <Ionicons
               name="arrow-undo-outline"
               size={22}
               color={COLORS.orange}
             />
             <Text className="text-gray-700">
-              {parcelCounts.returned} Retourné
+              Retourné ({parcelCounts.returned})
             </Text>
-          </View>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -239,7 +259,10 @@ const History = () => {
           <TouchableOpacity
             className="bg-white border border-gray-300 rounded-lg mb-4 p-4 shadow-md mx-4"
             onPress={() =>
-              navigation.navigate("ParcelDetail", { parcelId: item.id })
+              router.navigate({
+                pathname: "./parcel-details",
+                params: { parcelId: item.id },
+              })
             }
           >
             <View className="flex-row justify-between items-center">

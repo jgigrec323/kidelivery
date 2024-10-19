@@ -32,7 +32,7 @@ const BeingShippedBox = () => {
   } = mostRecentInTransitParcel;
 
   return (
-    <View className="bg-black rounded-[30px] py-[15px] px-7">
+    <View className="bg-black rounded-[30px] py-[15px] px-7 mt-3">
       {/* Display tracking number */}
       <View className="flex flex-row justify-between items-center">
         <Text className="text-white font-bold text-lg">

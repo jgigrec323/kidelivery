@@ -90,10 +90,10 @@ const Profile = () => {
         {/* Comptabilité */}
         <TouchableOpacity
           className="bg-gray-100 py-3 px-4 rounded-md mb-3 flex-row items-center"
-          onPress={() => router.navigate("/(home)/(screens)/finances")}
+          onPress={() => router.navigate("/(home)/(screens)/dashboard")}
         >
           <Ionicons name="calculator-outline" size={22} color={COLORS.black} />
-          <Text className="text-lg ml-3">Comptabilité</Text>
+          <Text className="text-lg ml-3">Tableau de bord</Text>
         </TouchableOpacity>
 
         {/* History */}

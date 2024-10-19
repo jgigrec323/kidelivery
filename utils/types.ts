@@ -51,6 +51,8 @@ export interface Parcel {
   parcelType: ParcelType;
   senderCommune: string;
   senderQuartier: string;
+  recipientName: string; // New field for recipient name
+  recipientPhone: string; // New field for recipient phone number
   pickupDate: Date;
   pickupTime: string;
   deliveryCommune: string;
@@ -67,17 +69,19 @@ export interface Parcel {
   updatedAt: Date;
   shop: Shop;
 }
+
 export interface ParcelInMultiple {
   id: string;
   parcelId: string;
   commune: string;
   quartier: string;
-  nomDestinataire: string;
-  phoneDestinataire: string;
+  recipientName: string; // New field for recipient name
+  recipientPhone: string; // New field for recipient phone number
   isFeeAtDoor: boolean;
   feeAtDoor?: number;
   parcel: Parcel;
 }
+
 export enum DeliveryStatus {
   PENDING = "PENDING",
   IN_TRANSIT = "IN_TRANSIT",
@@ -99,6 +103,7 @@ export interface Delivery {
   parcel: Parcel;
   orders: Order[];
 }
+
 export enum OrderStatus {
   PENDING = "PENDING",
   PAID = "PAID",

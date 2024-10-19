@@ -16,7 +16,7 @@ export default function Layout() {
         }}
       />
       <Stack.Screen
-        name="finances"
+        name="dashboard"
         options={{
           headerShown: false,
         }}
@@ -41,6 +41,12 @@ export default function Layout() {
       />
       <Stack.Screen
         name="manage-shops"
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="parcel-details"
         options={{
           headerShown: false,
         }}

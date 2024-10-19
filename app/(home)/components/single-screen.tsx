@@ -15,7 +15,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { useNavigation } from "@react-navigation/native";
 import config from "@/utils/config";
 import { useSelector } from "react-redux";
-import { RootState } from "@/store"; // Assuming your Redux store has a RootState type
+import { RootState } from "@/store";
 import COLORS from "@/constants/Colors";
 import { router } from "expo-router";
 import { calculateDeliveryFee } from "@/utils/calculateFee";
@@ -133,6 +133,8 @@ export default function SingleScreen() {
         hour: "2-digit",
         minute: "2-digit",
       }),
+      recipientName: recipientName.trim(), // Added recipient name
+      recipientPhone: recipientPhone.trim(), // Added recipient phone
       isFeeAtDoor: collectAtDoor,
       feeAtDoor: collectAtDoor ? Number(feeAmount) : 0,
       shopId: user.shops[0]?.id || "", // Safe access with fallback

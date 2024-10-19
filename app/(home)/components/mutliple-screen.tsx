@@ -164,6 +164,10 @@ export default function MultipleScreen() {
       shopId: user.shops[0]?.id,
     };
 
+    payload.parcelsInMultiple.forEach((p) => {
+      console.log(p.packages);
+    });
+
     try {
       const response = await fetch(`${config.API_BASE_URL}/requests/multiple`, {
         method: "POST",

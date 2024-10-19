@@ -120,19 +120,26 @@ const Home = () => {
               </Pressable>
             </View>
 
-            <View className="space-y-4">
+            <View>
               {threeMostRecentParcels.length === 0 ? (
                 <View className="flex items-center justify-center h-16">
                   <Text>Vous n'avez pas encore commandé</Text>
                 </View>
               ) : (
-                threeMostRecentParcels.map((parcel) => (
-                  <AlreadyShippedBox
+                threeMostRecentParcels.map((parcel, index) => (
+                  <View
                     key={parcel.id}
-                    name={parcel.name}
-                    id={parcel.trackingNumber}
-                    status={parcel.status}
-                  />
+                    style={{
+                      marginBottom:
+                        index !== threeMostRecentParcels.length - 1 ? 10 : 0,
+                    }}
+                  >
+                    <AlreadyShippedBox
+                      name={parcel.name}
+                      id={parcel.trackingNumber}
+                      status={parcel.status}
+                    />
+                  </View>
                 ))
               )}
             </View>

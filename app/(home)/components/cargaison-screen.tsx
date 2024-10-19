@@ -25,6 +25,8 @@ export default function CargaisonScreen() {
   const [quartierDelivery, setQuartierDelivery] = useState("");
 
   const [description, setDescription] = useState(""); // For adding description
+  const [recipientName, setRecipientName] = useState(""); // Recipient Name
+  const [recipientPhone, setRecipientPhone] = useState(""); // Recipient Phone
 
   const [pickupDate, setPickupDate] = useState(new Date());
   const [pickupTime, setPickupTime] = useState(new Date());
@@ -87,6 +89,14 @@ export default function CargaisonScreen() {
       Alert.alert("Error", "Please provide a description for the cargaison.");
       return false;
     }
+    if (!recipientName.trim()) {
+      Alert.alert("Error", "Please provide the recipient's name.");
+      return false;
+    }
+    if (!recipientPhone.trim() || recipientPhone.length < 8) {
+      Alert.alert("Error", "Please provide a valid recipient phone number.");
+      return false;
+    }
     return true;
   };
 
@@ -110,6 +120,8 @@ export default function CargaisonScreen() {
       dropoffTime: deliveryTime.toLocaleTimeString(),
       isFeeAtDoor: false, // Assuming no fee at door for Cargaison
       feeAtDoor: 0,
+      recipientName: recipientName.trim(), // Add recipient name
+      recipientPhone: recipientPhone.trim(), // Add recipient phone
       shopId: user.shops[0]?.id || "", // Safe access with fallback
       userId: user.id || "", // Safe access with fallback
     };
@@ -135,6 +147,8 @@ export default function CargaisonScreen() {
         setDeliveryDate(new Date());
         setDeliveryTime(new Date());
         setDescription(""); // Reset description
+        setRecipientName(""); // Reset recipient name
+        setRecipientPhone(""); // Reset recipient phone
         navigation.goBack(); // Go back to the previous screen
       } else {
         Alert.alert("Error", "Failed to create the cargaison request.");
@@ -331,6 +345,24 @@ export default function CargaisonScreen() {
               onChange={onDeliveryTimeChange}
             />
           )}
+        </View>
+
+        {/* Recipient Information */}
+        <Text className="my-4 text-orange text-lg">Destinataire</Text>
+        <View className="space-y-3">
+          <TextInput
+            className="bg-grayLight py-3 px-4 rounded-md text-lg text-black"
+            placeholder="Nom du destinataire"
+            value={recipientName}
+            onChangeText={setRecipientName}
+          />
+          <TextInput
+            className="bg-grayLight py-3 px-4 rounded-md text-lg text-black"
+            placeholder="Téléphone du destinataire"
+            keyboardType="phone-pad"
+            value={recipientPhone}
+            onChangeText={setRecipientPhone}
+          />
         </View>
 
         <Text className="mt-4">

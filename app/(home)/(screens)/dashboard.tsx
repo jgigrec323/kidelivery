@@ -27,16 +27,16 @@ import {
   isSameDay,
 } from "date-fns";
 import { LineChart } from "react-native-chart-kit";
-import { fetchOrders, fetchDeliveries } from "@/utils/fetchData";
+import { fetchDeliveries } from "@/utils/fetchData";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { formatMoney } from "@/utils/formatMoney";
 
 const screenWidth = Dimensions.get("window").width;
 
-const Finances = () => {
+const Dashboard = () => {
   const dispatch = useDispatch();
   const userId = useSelector((state: RootState) => state.auth.id);
-  const orders = useSelector((state: RootState) => state.orders.orders);
   const deliveries = useSelector(
     (state: RootState) => state.deliveries.deliveries
   );
@@ -50,12 +50,11 @@ const Finances = () => {
   const [endDate, setEndDate] = useState(endOfDay(new Date()));
   const [showDatePicker, setShowDatePicker] = useState(false);
 
-  const [paidAmount, setPaidAmount] = useState(0);
-  const [unpaidAmount, setUnpaidAmount] = useState(0);
-  const [totalAmount, setTotalAmount] = useState(0);
+  const [pending, setPending] = useState(0);
   const [inTransit, setInTransit] = useState(0);
   const [completed, setCompleted] = useState(0);
   const [cancelled, setCancelled] = useState(0);
+  const [feeAtDoorTotal, setFeeAtDoorTotal] = useState(0);
   const [chartData, setChartData] = useState<number[]>(Array(12).fill(0));
 
   const shortMonthNames = [
@@ -98,7 +97,6 @@ const Finances = () => {
   const loadData = async () => {
     if (!userId) return;
     setLoading(true);
-    await fetchOrders(userId, dispatch);
     await fetchDeliveries(userId, dispatch);
     setLoading(false);
   };
@@ -108,56 +106,69 @@ const Finances = () => {
   }, [userId]);
 
   useEffect(() => {
-    const monthlyData = Array(12).fill(0); // Initialize array for 12 months
+    const monthlyData = Array(12).fill(0);
 
-    orders.forEach((order) => {
-      const orderDate = new Date(order.createdAt);
-      const monthIndex = orderDate.getMonth(); // Get the month index (0-11)
-      monthlyData[monthIndex] += order.amount; // Sum up amounts per month
+    deliveries.forEach((delivery) => {
+      const deliveryDate = new Date(delivery.createdAt);
+      const monthIndex = deliveryDate.getMonth(); // Get the month index (0-11)
+      monthlyData[monthIndex] += 1; // Count deliveries per month
     });
 
-    setChartData(monthlyData); // Set the chart data with real values
-  }, [orders]);
+    setChartData(monthlyData); // Set the chart data with delivery counts
+  }, [deliveries]);
 
   useEffect(() => {
-    const filteredOrders = orders.filter(
-      (order) =>
-        new Date(order.createdAt) >= startDate &&
-        new Date(order.createdAt) <= endDate
-    );
-
-    const paidOrderAmount = filteredOrders
-      .filter((order) => order.status === "PAID")
-      .reduce((sum, order) => sum + order.amount, 0);
-
-    const unpaidOrderAmount = filteredOrders
-      .filter((order) => order.status === "PENDING")
-      .reduce((sum, order) => sum + order.amount, 0);
-
-    const totalOrderAmount = filteredOrders.reduce(
-      (sum, order) => sum + order.amount,
-      0
-    );
-
     const filteredDeliveries = deliveries.filter(
       (delivery) =>
         new Date(delivery.createdAt) >= startDate &&
         new Date(delivery.createdAt) <= endDate
     );
 
-    setPaidAmount(paidOrderAmount);
-    setUnpaidAmount(unpaidOrderAmount);
-    setTotalAmount(totalOrderAmount);
-    setInTransit(
-      filteredDeliveries.filter((d) => d.status === "IN_TRANSIT").length
-    );
-    setCompleted(
-      filteredDeliveries.filter((d) => d.status === "COMPLETED").length
-    );
-    setCancelled(
-      filteredDeliveries.filter((d) => d.status === "CANCELLED").length
-    );
-  }, [orders, deliveries, startDate, endDate]);
+    const pending = filteredDeliveries.filter(
+      (d) => d.status === "PENDING"
+    ).length;
+    const inTransitDeliveries = filteredDeliveries.filter(
+      (d) => d.status === "IN_TRANSIT"
+    ).length;
+
+    const completedDeliveries = filteredDeliveries.filter(
+      (d) => d.status === "COMPLETED"
+    ).length;
+
+    const cancelledDeliveries = filteredDeliveries.filter(
+      (d) => d.status === "CANCELLED"
+    ).length;
+
+    // Calculate the total fee-at-door for delivered parcels
+    const feeAtDoorDeliveries = filteredDeliveries.reduce((total, delivery) => {
+      // Handle both 'parcel' and 'Parcel' (case difference)
+      const parcel = delivery.parcel || delivery.Parcel;
+
+      if (parcel && delivery.status === "COMPLETED") {
+        // For single parcels
+        if (parcel.isFeeAtDoor && parcel.feeAtDoor) {
+          total += parcel.feeAtDoor;
+        }
+
+        // For multiple parcels, check if 'parcelsInMultiple' exists
+        if (Array.isArray(parcel.parcelsInMultiple)) {
+          parcel.parcelsInMultiple.forEach((multipleParcel) => {
+            if (multipleParcel.isFeeAtDoor && multipleParcel.feeAtDoor) {
+              total += multipleParcel.feeAtDoor;
+            }
+          });
+        }
+      }
+
+      return total;
+    }, 0);
+
+    setPending(pending);
+    setInTransit(inTransitDeliveries);
+    setCompleted(completedDeliveries);
+    setCancelled(cancelledDeliveries);
+    setFeeAtDoorTotal(feeAtDoorDeliveries);
+  }, [deliveries, startDate, endDate]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -244,28 +255,23 @@ const Finances = () => {
             ))}
           </View>
 
-          {/* Money Overview */}
-          <View className="mb-1">
-            <Text className="text-xl font-bold mb-2">Finances</Text>
-            <View className="flex-row justify-between mb-3">
-              <View className="bg-[#1c1c1e] py-3 px-3 rounded-lg flex-1 mr-2">
-                <Text className="text-white text-lg">Revenus (Payé)</Text>
-                <Text className="text-white text-2xl font-bold">
-                  {paidAmount} GNF
-                </Text>
-              </View>
-              <View className="bg-[#1c1c1e] py-3 px-3 rounded-lg flex-1 ml-2">
-                <Text className="text-lg text-white">Montant Impayé</Text>
-                <Text className="text-white text-2xl font-bold">
-                  {unpaidAmount} GNF
-                </Text>
-              </View>
+          {/* Collection à la porte (Display on a separate row) */}
+          <View className="mb-4">
+            <View className="bg-[#1c1c1e] py-3 px-3 rounded-lg">
+              <Text className="text-white text-lg">Collection à la porte</Text>
+              <Text className="text-white text-2xl font-bold">
+                {formatMoney(feeAtDoorTotal)}
+              </Text>
             </View>
           </View>
 
           {/* Delivery Overview */}
           <Text className="text-xl font-bold mb-2">Livraisons</Text>
           <View className="flex-row justify-between mb-4">
+            <View className="bg-[#1c1c1e] py-3 px-3 rounded-lg flex-1 mr-2">
+              <Text className="text-white text-lg">En attente</Text>
+              <Text className="text-2xl font-bold text-white">{pending}</Text>
+            </View>
             <View className="bg-[#1c1c1e] py-3 px-3 rounded-lg flex-1 mr-2">
               <Text className="text-white text-lg">En transit</Text>
               <Text className="text-2xl font-bold text-white">{inTransit}</Text>
@@ -276,15 +282,14 @@ const Finances = () => {
             </View>
           </View>
 
-          <View className="flex-row justify-between mb-3">
+          <View className="flex-row justify-between mb-4">
             <View className="bg-[#1c1c1e] py-3 px-3 rounded-lg flex-1 mr-2">
               <Text className="text-white text-lg">Annulés</Text>
               <Text className="text-2xl font-bold text-white">{cancelled}</Text>
             </View>
           </View>
 
-          {/* Line Chart */}
-
+          {/* Line Chart for Deliveries */}
           <View
             style={{
               backgroundColor: "#1c1c1e",
@@ -303,12 +308,12 @@ const Finances = () => {
                 datasets: [{ data: chartData }],
               }}
               width={screenWidth - 70}
-              height={200}
+              height={210}
               chartConfig={{
                 backgroundGradientFrom: "#1c1c1e",
                 backgroundGradientTo: "#1c1c1e",
                 color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-                strokeWidth: 2,
+                // strokeWidth: 2,
                 propsForDots: {
                   r: "4",
                   strokeWidth: "2",
@@ -327,4 +332,4 @@ const Finances = () => {
   );
 };
 
-export default Finances;
+export default Dashboard;
