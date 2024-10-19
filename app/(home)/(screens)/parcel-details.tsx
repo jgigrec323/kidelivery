@@ -6,7 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
 } from "react-native";
-import { useRoute } from "@react-navigation/native"; // Ensure this is for React Navigation
+import { useRoute } from "@react-navigation/native";
 import axios from "axios";
 import config from "@/utils/config";
 import COLORS from "@/constants/Colors";
@@ -58,11 +58,11 @@ const ParcelDetails = () => {
 
   return (
     <SafeAreaView className="flex-1 bg-white">
-      <CustomHeader h={100} title="Détails du colis" />
+      <CustomHeader h={80} title="Détails du colis" />
 
       {/* Ticket-style card layout */}
       <ScrollView className="bg-white h-full px-4">
-        <View className="bg-gray-100 rounded-lg p-4 my-4 border-l-8 border-orange-500 shadow-sm">
+        <View className="bg-white rounded-lg px-5 pt-1 my-4 border-l-8  shadow-md">
           <Text className="text-2xl font-bold text-black mb-4">
             Colis {parcel.trackingNumber}
           </Text>
@@ -72,12 +72,12 @@ const ParcelDetails = () => {
             <Text className="text-lg font-bold text-orange-500 mb-1">
               Détails du colis
             </Text>
-            <Text className="text-gray-700">Nom: {parcel.name}</Text>
-            <Text className="text-gray-700">
+            <Text className="text-gray-800">Nom: {parcel.name}</Text>
+            <Text className="text-gray-800">
               Description: {parcel.description}
             </Text>
-            <Text className="text-gray-700">Statut: {parcel.status}</Text>
-            <Text className="text-gray-700">Type: {parcel.parcelType}</Text>
+            <Text className="text-gray-800">Statut: {parcel.status}</Text>
+            <Text className="text-gray-800">Type: {parcel.parcelType}</Text>
           </View>
 
           {/* Pickup Details */}
@@ -85,14 +85,16 @@ const ParcelDetails = () => {
             <Text className="text-lg font-bold text-orange-500 mb-1">
               Informations de ramassage
             </Text>
-            <Text className="text-gray-700">
+            <Text className="text-gray-800">
               Commune: {parcel.senderCommune}
             </Text>
-            <Text className="text-gray-700">
+            <Text className="text-gray-800">
               Quartier: {parcel.senderQuartier}
             </Text>
-            <Text className="text-gray-700">Date: {parcel.pickupDate}</Text>
-            <Text className="text-gray-700">Heure: {parcel.pickupTime}</Text>
+            <Text className="text-gray-800">
+              Date: {new Date(parcel.pickupDate).toLocaleDateString()}
+            </Text>
+            <Text className="text-gray-800">Heure: {parcel.pickupTime}</Text>
           </View>
 
           {/* Delivery Details */}
@@ -100,14 +102,29 @@ const ParcelDetails = () => {
             <Text className="text-lg font-bold text-orange-500 mb-1">
               Informations de livraison
             </Text>
-            <Text className="text-gray-700">
+            <Text className="text-gray-800">
               Commune: {parcel.deliveryCommune}
             </Text>
-            <Text className="text-gray-700">
+            <Text className="text-gray-800">
               Quartier: {parcel.deliveryQuartier}
             </Text>
-            <Text className="text-gray-700">Date: {parcel.dropoffDate}</Text>
-            <Text className="text-gray-700">Heure: {parcel.dropoffTime}</Text>
+            <Text className="text-gray-800">
+              Date: {new Date(parcel.dropoffDate).toLocaleDateString()}
+            </Text>
+            <Text className="text-gray-800">Heure: {parcel.dropoffTime}</Text>
+          </View>
+
+          {/* Recipient Information */}
+          <View className="mb-6">
+            <Text className="text-lg font-bold text-orange-500 mb-1">
+              Informations du destinataire
+            </Text>
+            <Text className="text-gray-800">
+              Nom du destinataire: {parcel.recipientName}
+            </Text>
+            <Text className="text-gray-800">
+              Téléphone du destinataire: {parcel.recipientPhone}
+            </Text>
           </View>
 
           {/* Fee Details */}
@@ -116,7 +133,7 @@ const ParcelDetails = () => {
               <Text className="text-lg font-bold text-orange-500 mb-1">
                 Frais de collecte à la porte
               </Text>
-              <Text className="text-gray-700">
+              <Text className="text-gray-800">
                 {formatMoney(parcel.feeAtDoor)} GNF
               </Text>
             </View>

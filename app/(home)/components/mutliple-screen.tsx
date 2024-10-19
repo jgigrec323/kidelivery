@@ -105,6 +105,7 @@ export default function MultipleScreen() {
     value: string | boolean
   ) => {
     const newData = [...communeData];
+    //@ts-ignore
     newData[communeIndex].packages[packageIndex][field] = value;
     setCommuneData(newData);
   };

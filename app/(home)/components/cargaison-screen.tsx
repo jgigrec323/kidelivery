@@ -47,27 +47,28 @@ export default function CargaisonScreen() {
   }, []);
 
   // Handlers for date and time pickers
+  //@ts-ignore
   const onPickupDateChange = (event, selectedDate) => {
     setShowPickupDatePicker(false);
     if (selectedDate) {
       setPickupDate(selectedDate);
     }
   };
-
+  //@ts-ignore
   const onPickupTimeChange = (event, selectedTime) => {
     setShowPickupTimePicker(false);
     if (selectedTime) {
       setPickupTime(selectedTime);
     }
   };
-
+  //@ts-ignore
   const onDeliveryDateChange = (event, selectedDate) => {
     setShowDeliveryDatePicker(false);
     if (selectedDate) {
       setDeliveryDate(selectedDate);
     }
   };
-
+  //@ts-ignore
   const onDeliveryTimeChange = (event, selectedTime) => {
     setShowDeliveryTimePicker(false);
     if (selectedTime) {

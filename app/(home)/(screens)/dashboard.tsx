@@ -118,11 +118,12 @@ const Dashboard = () => {
   }, [deliveries]);
 
   useEffect(() => {
-    const filteredDeliveries = deliveries.filter(
-      (delivery) =>
-        new Date(delivery.createdAt) >= startDate &&
-        new Date(delivery.createdAt) <= endDate
-    );
+    const filteredDeliveries = deliveries.filter((delivery) => {
+      const deliveryDate = new Date(delivery.createdAt);
+
+      // Ensure the comparison between deliveryDate and the startDate/endDate takes time into account
+      return deliveryDate >= startDate && deliveryDate <= endDate;
+    });
 
     const pending = filteredDeliveries.filter(
       (d) => d.status === "PENDING"
@@ -141,16 +142,13 @@ const Dashboard = () => {
 
     // Calculate the total fee-at-door for delivered parcels
     const feeAtDoorDeliveries = filteredDeliveries.reduce((total, delivery) => {
-      // Handle both 'parcel' and 'Parcel' (case difference)
       const parcel = delivery.parcel || delivery.Parcel;
 
       if (parcel && delivery.status === "COMPLETED") {
-        // For single parcels
         if (parcel.isFeeAtDoor && parcel.feeAtDoor) {
           total += parcel.feeAtDoor;
         }
 
-        // For multiple parcels, check if 'parcelsInMultiple' exists
         if (Array.isArray(parcel.parcelsInMultiple)) {
           parcel.parcelsInMultiple.forEach((multipleParcel) => {
             if (multipleParcel.isFeeAtDoor && multipleParcel.feeAtDoor) {
