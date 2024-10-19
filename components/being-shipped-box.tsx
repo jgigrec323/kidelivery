@@ -44,7 +44,7 @@ const BeingShippedBox = () => {
           className="flex flex-row justify-center items-center rounded-full w-20 h-5"
           onPress={() => {
             // Add logic to navigate to the tracking page or any other action
-            console.log(`Tracking ${trackingNumber}`);
+            //console.log(`Tracking ${trackingNumber}`);
           }}
         >
           <Text className="text-white text-xs">Suivre</Text>
@@ -54,7 +54,7 @@ const BeingShippedBox = () => {
 
       {/* Display progress bar */}
       <View>
-        <ProgressBar />
+        <ProgressBar progress={0} />
 
         {/* Pickup and Delivery Information */}
         <View className="flex flex-row justify-between mt-4">

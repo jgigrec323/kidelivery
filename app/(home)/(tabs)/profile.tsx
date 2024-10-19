@@ -52,11 +52,21 @@ const Profile = () => {
       <CustomHeader h={100} title="Profil" />
       <View className="px-5 mt-8">
         {/* Profile Section */}
-        <View className="flex-row items-center mb-8">
-          <View className="h-16 w-16 bg-grayLight rounded-full items-center justify-center">
-            <Text className="text-2xl font-bold">{initials}</Text>
+        <View className=" flex-row items-center justify-between mb-8">
+          <View className="flex-row items-center">
+            <View className="h-16 w-16 bg-grayLight rounded-full items-center justify-center">
+              <Text className="text-2xl font-bold">{initials}</Text>
+            </View>
+            <Text className="ml-4 text-xl font-bold">{user.fullName}</Text>
           </View>
-          <Text className="ml-4 text-xl font-bold">{user.fullName}</Text>
+          <View>
+            <Ionicons
+              onPress={() => router.navigate("/(home)/(screens)/settings")}
+              name="settings-outline"
+              size={30}
+              color={COLORS.black}
+            />
+          </View>
         </View>
 
         {/* Notifications */}
@@ -101,7 +111,7 @@ const Profile = () => {
           onPress={() => router.navigate("/(home)/(screens)/settings")}
         >
           <Ionicons name="settings-outline" size={22} color={COLORS.black} />
-          <Text className="text-lg ml-3">Paramètres du compte</Text>
+          <Text className="text-lg ml-3">Mon profil</Text>
         </TouchableOpacity>
 
         {/* Contact Us */}

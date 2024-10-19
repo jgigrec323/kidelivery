@@ -20,12 +20,13 @@ import config from "@/utils/config";
 import { setUser } from "@/store/slices/authSlice"; // Import Redux action
 import { Shop } from "@/utils/types"; // Ensure you import the correct Shop type
 import { communes } from "@/utils/communesGn";
+import { useNavigation } from "expo-router";
 
 const StoreScreen = () => {
   const dispatch = useDispatch();
   const { id: userId, shops } = useSelector((state: RootState) => state.auth); // Get user ID and shops from Redux
   const shop: Shop | undefined = shops[0]; // Assuming the user has only one shop
-
+  const navigation = useNavigation();
   const [name, setName] = useState(shop?.name || "");
   const [commune, setCommune] = useState(shop?.commune || "");
   const [quartier, setQuartier] = useState(shop?.quartier || "");
@@ -50,16 +51,13 @@ const StoreScreen = () => {
 
     try {
       setLoading(true);
-      const response = await axios.patch(
-        `${config.API_BASE_URL}/shops/update`,
-        {
-          id: shop?.id,
-          name,
-          commune,
-          quartier,
-          address,
-        }
-      );
+      const response = await axios.patch(`${config.API_BASE_URL}/shops/`, {
+        id: shop?.id,
+        name,
+        commune,
+        quartier,
+        address,
+      });
 
       if (response.status === 200) {
         Alert.alert(
@@ -83,6 +81,8 @@ const StoreScreen = () => {
           })
         );
       }
+
+      navigation.goBack();
     } catch (error) {
       console.error("Error updating shop:", error);
       Alert.alert(

@@ -35,7 +35,7 @@ const Settings = () => {
 
   return (
     <SafeAreaView className="bg-white h-full">
-      <CustomHeader h={100} title="Paramètres" />
+      <CustomHeader h={100} title="Mon profil" />
       <View className="px-5 mt-8">
         {/* Change Name */}
         <TouchableOpacity
@@ -65,7 +65,7 @@ const Settings = () => {
         </TouchableOpacity>
 
         {/* Dark Mode */}
-        <View className="flex-row items-center justify-between bg-gray-100 py-3 px-4 rounded-md mb-3">
+        {/* <View className="flex-row items-center justify-between bg-gray-100 py-3 px-4 rounded-md mb-3">
           <View className="flex-row items-center">
             <Ionicons name="moon-outline" size={22} color={COLORS.black} />
             <Text className="text-lg ml-3">Mode Sombre</Text>
@@ -76,14 +76,14 @@ const Settings = () => {
             thumbColor={COLORS.orange}
             trackColor={{ true: COLORS.orange, false: COLORS.grayDark }}
           />
-        </View>
+        </View> */}
 
         {/* Deconnecter */}
         <TouchableOpacity
           className="bg-gray-100 py-3 px-4 rounded-md mb-3 flex-row items-center"
           onPress={async () => {
             await signOut();
-            router.push("/(auth)/signin");
+            router.push("/(auth)/sign-in");
           }}
         >
           <Ionicons name="log-out-outline" size={22} color={COLORS.orange} />
