@@ -26,11 +26,11 @@ import { router } from "expo-router";
 
 const History = () => {
   const [selectedRange, setSelectedRange] = useState<
-    "DAY" | "WEEK" | "MONTH" | "YEAR"
-  >("DAY");
-  const [startDate, setStartDate] = useState(new Date());
-  const [endDate, setEndDate] = useState(new Date());
-  const [selectedStatus, setSelectedStatus] = useState<string | null>(null); // For filtering by status, null for "All"
+    "ALL_TIME" | "DAY" | "WEEK" | "MONTH" | "YEAR"
+  >("ALL_TIME");
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
+  const [selectedStatus, setSelectedStatus] = useState<string | null>(null); // For filtering by status
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isStartDatePicker, setIsStartDatePicker] = useState(true);
   const navigation = useNavigation();
@@ -40,7 +40,9 @@ const History = () => {
     updateDateRange(selectedRange);
   }, [selectedRange]);
 
-  const updateDateRange = (range: "DAY" | "WEEK" | "MONTH" | "YEAR") => {
+  const updateDateRange = (
+    range: "ALL_TIME" | "DAY" | "WEEK" | "MONTH" | "YEAR"
+  ) => {
     const today = new Date();
     switch (range) {
       case "DAY":
@@ -59,9 +61,10 @@ const History = () => {
         setStartDate(startOfYear(today));
         setEndDate(endOfYear(today));
         break;
+      case "ALL_TIME":
       default:
-        setStartDate(today);
-        setEndDate(today);
+        setStartDate(null);
+        setEndDate(null);
     }
   };
 
@@ -83,45 +86,46 @@ const History = () => {
   };
 
   const getDisplayDate = () => {
+    if (selectedRange === "ALL_TIME") {
+      return "Tout le temps";
+    }
     const today = new Date();
     const yesterday = subDays(today, 1);
-    if (isSameDay(startDate, today)) {
+    if (isSameDay(startDate as Date, today)) {
       return "Aujourd'hui";
-    } else if (isSameDay(startDate, yesterday)) {
+    } else if (isSameDay(startDate as Date, yesterday)) {
       return "Hier";
     } else {
       return selectedRange === "DAY"
-        ? `Le: ${format(startDate, "dd/MM/yyyy")}`
-        : `Du: ${format(startDate, "dd/MM/yyyy")} au ${format(
-            endDate,
+        ? `Le: ${format(startDate as Date, "dd/MM/yyyy")}`
+        : `Du: ${format(startDate as Date, "dd/MM/yyyy")} au ${format(
+            endDate as Date,
             "dd/MM/yyyy"
           )}`;
     }
   };
 
-  // Debugging: Log parcels and startDate, endDate to check filtering logic
-  console.log("Parcels:", parcels);
-  console.log("Start Date:", startDate);
-  console.log("End Date:", endDate);
-
-  // Filter parcels by date range and selected status
   const filteredParcels = parcels.filter((parcel) => {
     const parcelDate = new Date(parcel.createdAt);
-    const isInRange = parcelDate >= startDate && parcelDate <= endDate;
-    const isInStatus = selectedStatus ? parcel.status === selectedStatus : true; // Filter by status if selected
+    const isInRange =
+      startDate && endDate
+        ? parcelDate >= startDate && parcelDate <= endDate
+        : true;
+    const isInStatus = selectedStatus ? parcel.status === selectedStatus : true;
     return isInRange && isInStatus;
   });
 
-  // Debugging: Log filtered parcels to verify
-  console.log("Filtered Parcels:", filteredParcels);
-
   const parcelCounts = {
-    total: parcels.length,
-    pending: parcels.filter((parcel) => parcel.status === "PENDING").length,
-    inTransit: parcels.filter((parcel) => parcel.status === "IN_TRANSIT")
+    total: filteredParcels.length,
+    pending: filteredParcels.filter((parcel) => parcel.status === "PENDING")
       .length,
-    delivered: parcels.filter((parcel) => parcel.status === "DELIVERED").length,
-    returned: parcels.filter((parcel) => parcel.status === "RETURNED").length,
+    inTransit: filteredParcels.filter(
+      (parcel) => parcel.status === "IN_TRANSIT"
+    ).length,
+    delivered: filteredParcels.filter((parcel) => parcel.status === "DELIVERED")
+      .length,
+    returned: filteredParcels.filter((parcel) => parcel.status === "RETURNED")
+      .length,
   };
 
   const getProgress = (status: string) => {
@@ -154,22 +158,24 @@ const History = () => {
         </TouchableOpacity>
         {showDatePicker && (
           <DateTimePicker
-            value={isStartDatePicker ? startDate : endDate}
+            value={isStartDatePicker ? (startDate as Date) : (endDate as Date)}
             mode="date"
             display="default"
             onChange={handleDateChange}
-            minimumDate={isStartDatePicker ? undefined : startDate}
+            minimumDate={isStartDatePicker ? undefined : (startDate as Date)}
           />
         )}
       </View>
 
       {/* Range Selection Buttons */}
       <View className="flex-row justify-around  mx-4">
-        {["DAY", "WEEK", "MONTH", "YEAR"].map((range) => (
+        {["ALL_TIME", "DAY", "WEEK", "MONTH", "YEAR"].map((range) => (
           <TouchableOpacity
             key={range}
             onPress={() =>
-              setSelectedRange(range as "DAY" | "WEEK" | "MONTH" | "YEAR")
+              setSelectedRange(
+                range as "ALL_TIME" | "DAY" | "WEEK" | "MONTH" | "YEAR"
+              )
             }
             className={`py-2 px-4 rounded-full shadow-md ${
               selectedRange === range ? "bg-orange" : "bg-gray-100"
@@ -180,7 +186,9 @@ const History = () => {
                 selectedRange === range ? "text-white" : "text-black"
               }`}
             >
-              {range === "DAY"
+              {range === "ALL_TIME"
+                ? "Toujours"
+                : range === "DAY"
                 ? "Jour"
                 : range === "WEEK"
                 ? "Semaine"
