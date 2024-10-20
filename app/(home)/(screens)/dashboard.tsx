@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   View,
   Text,
   ScrollView,
   RefreshControl,
   TouchableOpacity,
-  ActivityIndicator,
   Dimensions,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
@@ -55,29 +54,44 @@ const Dashboard = () => {
   const [completed, setCompleted] = useState(0);
   const [cancelled, setCancelled] = useState(0);
   const [feeAtDoorTotal, setFeeAtDoorTotal] = useState(0);
-  const [chartData, setChartData] = useState<number[]>(Array(12).fill(0));
 
-  const shortMonthNames = [
-    "Jan",
-    "Fév",
-    "Mar",
-    "Avr",
-    "Mai",
-    "Juin",
-    "Jul",
-    "Août",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Déc",
-  ];
+  // Grouping hours into 4 periods
+  const chartLabels = useMemo(() => {
+    switch (selectedRange) {
+      case "DAY":
+        return ["00-06h", "06-12h", "12-18h", "18-24h"];
+      case "WEEK":
+        return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      case "MONTH":
+        const daysInMonth = new Date().getDate();
+        return Array.from({ length: daysInMonth }, (_, i) => `${i + 1}`);
+      case "YEAR":
+        return [
+          "Jan",
+          "Feb",
+          "Mar",
+          "Apr",
+          "May",
+          "Jun",
+          "Jul",
+          "Aug",
+          "Sep",
+          "Oct",
+          "Nov",
+          "Dec",
+        ];
+      default:
+        return [];
+    }
+  }, [selectedRange]);
 
   const updateDateRange = (range: "DAY" | "WEEK" | "MONTH" | "YEAR") => {
     const today = new Date();
     switch (range) {
       case "DAY":
-        setStartDate(startOfDay(today));
-        setEndDate(endOfDay(today));
+        const newDate = startOfDay(today);
+        setStartDate(newDate);
+        setEndDate(newDate); // Set the same start and end date for a single day
         break;
       case "WEEK":
         setStartDate(startOfWeek(today, { weekStartsOn: 1 }));
@@ -105,23 +119,58 @@ const Dashboard = () => {
     if (userId) loadData();
   }, [userId]);
 
-  useEffect(() => {
+  // Dynamically generate chart data based on the selected range
+  const chartData = useMemo(() => {
+    const periodData = Array(4).fill(0);
+    const weeklyData = Array(7).fill(0);
+    const dailyData = Array(31).fill(0); // Max 31 days in a month
     const monthlyData = Array(12).fill(0);
 
-    deliveries.forEach((delivery) => {
+    const filteredDeliveries = deliveries.filter((delivery) => {
       const deliveryDate = new Date(delivery.createdAt);
-      const monthIndex = deliveryDate.getMonth(); // Get the month index (0-11)
-      monthlyData[monthIndex] += 1; // Count deliveries per month
+      return deliveryDate >= startDate && deliveryDate <= endDate;
     });
 
-    setChartData(monthlyData); // Set the chart data with delivery counts
-  }, [deliveries]);
+    switch (selectedRange) {
+      case "DAY":
+        // Group deliveries into periods
+        filteredDeliveries.forEach((delivery) => {
+          const hour = new Date(delivery.createdAt).getHours();
+          if (hour >= 0 && hour < 6) periodData[0] += 1;
+          else if (hour >= 6 && hour < 12) periodData[1] += 1;
+          else if (hour >= 12 && hour < 18) periodData[2] += 1;
+          else periodData[3] += 1;
+        });
+        return periodData;
+      case "WEEK":
+        filteredDeliveries.forEach((delivery) => {
+          const dayOfWeek = new Date(delivery.createdAt).getDay();
+          weeklyData[dayOfWeek] += 1;
+        });
+        return weeklyData;
+      case "MONTH":
+        filteredDeliveries.forEach((delivery) => {
+          const dayOfMonth = new Date(delivery.createdAt).getDate() - 1;
+          dailyData[dayOfMonth] += 1;
+        });
+        return dailyData;
+      case "YEAR":
+        filteredDeliveries.forEach((delivery) => {
+          const monthIndex = new Date(delivery.createdAt).getMonth();
+          monthlyData[monthIndex] += 1;
+        });
+        return monthlyData;
+      default:
+        return [];
+    }
+  }, [deliveries, startDate, endDate, selectedRange]);
 
   useEffect(() => {
     const filteredDeliveries = deliveries.filter((delivery) => {
       const deliveryDate = new Date(delivery.createdAt);
-
-      // Ensure the comparison between deliveryDate and the startDate/endDate takes time into account
+      if (selectedRange === "DAY") {
+        return isSameDay(deliveryDate, startDate);
+      }
       return deliveryDate >= startDate && deliveryDate <= endDate;
     });
 
@@ -131,24 +180,19 @@ const Dashboard = () => {
     const inTransitDeliveries = filteredDeliveries.filter(
       (d) => d.status === "IN_TRANSIT"
     ).length;
-
     const completedDeliveries = filteredDeliveries.filter(
       (d) => d.status === "COMPLETED"
     ).length;
-
     const cancelledDeliveries = filteredDeliveries.filter(
       (d) => d.status === "CANCELLED"
     ).length;
 
-    // Calculate the total fee-at-door for delivered parcels
     const feeAtDoorDeliveries = filteredDeliveries.reduce((total, delivery) => {
       const parcel = delivery.parcel || delivery.Parcel;
-
       if (parcel && delivery.status === "COMPLETED") {
         if (parcel.isFeeAtDoor && parcel.feeAtDoor) {
           total += parcel.feeAtDoor;
         }
-
         if (Array.isArray(parcel.parcelsInMultiple)) {
           parcel.parcelsInMultiple.forEach((multipleParcel) => {
             if (multipleParcel.isFeeAtDoor && multipleParcel.feeAtDoor) {
@@ -157,7 +201,6 @@ const Dashboard = () => {
           });
         }
       }
-
       return total;
     }, 0);
 
@@ -166,7 +209,7 @@ const Dashboard = () => {
     setCompleted(completedDeliveries);
     setCancelled(cancelledDeliveries);
     setFeeAtDoorTotal(feeAtDoorDeliveries);
-  }, [deliveries, startDate, endDate]);
+  }, [deliveries, startDate, endDate, selectedRange]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -207,7 +250,6 @@ const Dashboard = () => {
             className="flex-row items-center space-x-2 mb-3"
           >
             <Ionicons name="calendar-outline" size={20} color={COLORS.black} />
-
             <Text className="text-lg font-semibold text-black">
               {getDisplayDate()}
             </Text>
@@ -302,20 +344,20 @@ const Dashboard = () => {
           >
             <LineChart
               data={{
-                labels: shortMonthNames,
+                labels: chartLabels,
                 datasets: [{ data: chartData }],
               }}
               width={screenWidth - 70}
               height={210}
+              withOuterLines={false}
               chartConfig={{
                 backgroundGradientFrom: "#1c1c1e",
                 backgroundGradientTo: "#1c1c1e",
-                color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-                // strokeWidth: 2,
+                color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`, // Orangered color
                 propsForDots: {
-                  r: "4",
-                  strokeWidth: "2",
-                  stroke: COLORS.orange,
+                  r: "5", // Full dot without border
+                  strokeWidth: "0", // Remove border
+                  stroke: "rgba(255, 69, 0, 0)", // Ensure no stroke color
                 },
               }}
               bezier

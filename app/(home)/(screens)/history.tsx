@@ -99,6 +99,11 @@ const History = () => {
     }
   };
 
+  // Debugging: Log parcels and startDate, endDate to check filtering logic
+  console.log("Parcels:", parcels);
+  console.log("Start Date:", startDate);
+  console.log("End Date:", endDate);
+
   // Filter parcels by date range and selected status
   const filteredParcels = parcels.filter((parcel) => {
     const parcelDate = new Date(parcel.createdAt);
@@ -106,6 +111,9 @@ const History = () => {
     const isInStatus = selectedStatus ? parcel.status === selectedStatus : true; // Filter by status if selected
     return isInRange && isInStatus;
   });
+
+  // Debugging: Log filtered parcels to verify
+  console.log("Filtered Parcels:", filteredParcels);
 
   const parcelCounts = {
     total: parcels.length,
