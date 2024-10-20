@@ -8,15 +8,16 @@ import {
   Alert,
   ActivityIndicator,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Picker } from "@react-native-picker/picker";
-import { communes } from "@/utils/communesGn";
 import { Ionicons } from "@expo/vector-icons";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
 import { useNavigation } from "@react-navigation/native";
 import COLORS from "@/constants/Colors";
 import config from "@/utils/config";
+import { calculateDeliveryFee } from "@/utils/calculateFee";
+import { communes } from "@/utils/communesGn";
 
 // Define the types
 interface Package {
@@ -38,17 +39,17 @@ export default function MultipleScreen() {
   const [quartierPickup, setQuartierPickup] = useState("");
   const [pickupDate, setPickupDate] = useState(new Date());
   const [pickupTime, setPickupTime] = useState(new Date());
-  const [showPickupDatePicker, setShowPickupDatePicker] = useState(false);
-  const [showPickupTimePicker, setShowPickupTimePicker] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [useShopAddress, setUseShopAddress] = useState<boolean>(false); // NEW: toggle for shop address
+  const [totalPrice, setTotalPrice] = useState<number>(0); // For total delivery price
 
   const user = useSelector((state: RootState) => state.auth);
   const navigation = useNavigation();
 
   // Handle adding a commune
   const handleAddCommune = () => {
-    setCommuneData([
-      ...communeData,
+    setCommuneData((prevData) => [
+      ...prevData,
       {
         commune: "",
         quartier: "",
@@ -59,7 +60,10 @@ export default function MultipleScreen() {
 
   // Remove a commune
   const handleRemoveCommune = (communeIndex: number) => {
-    setCommuneData(communeData.filter((_, index) => index !== communeIndex));
+    const updatedData = communeData.filter(
+      (_, index) => index !== communeIndex
+    );
+    setCommuneData(updatedData);
   };
 
   // Handle commune selection
@@ -110,12 +114,43 @@ export default function MultipleScreen() {
     setCommuneData(newData);
   };
 
+  // Calculate total price based on communes and packages
+  useEffect(() => {
+    let total = 0;
+
+    communeData.forEach((commune) => {
+      const communeFee = calculateDeliveryFee({
+        senderCommune: communePickup,
+        deliveryCommune: commune.commune,
+        parcelType: "MULTIPLE",
+      });
+
+      total += commune.packages.length * communeFee; // Price based on number of packages
+    });
+
+    setTotalPrice(total);
+  }, [communeData, communePickup]);
+
+  // Update the pickup location if using shop address
+  useEffect(() => {
+    if (useShopAddress && user.shops[0]) {
+      // Update communePickup and quartierPickup with shop's info
+      setCommunePickup(user.shops[0].commune);
+      setQuartierPickup(user.shops[0].quartier);
+    } else {
+      // Clear values if not using shop address
+      setCommunePickup("");
+      setQuartierPickup("");
+    }
+  }, [useShopAddress, user.shops]);
+
   // Validate form
   const validateForm = (): boolean => {
     if (!communePickup || !quartierPickup) {
       Alert.alert("Error", "Please select a pickup location.");
       return false;
     }
+
     if (communeData.length === 0) {
       Alert.alert("Error", "Please add at least one delivery commune.");
       return false;
@@ -123,9 +158,13 @@ export default function MultipleScreen() {
 
     for (let i = 0; i < communeData.length; i++) {
       const commune = communeData[i];
-      if (!commune.commune || !commune.quartier) {
-        Alert.alert("Error", "Please select a commune and quartier.");
-        return false;
+
+      // Skip this validation if using the shop address
+      if (!useShopAddress) {
+        if (!commune.commune || !commune.quartier) {
+          Alert.alert("Error", "Please select a commune and quartier.");
+          return false;
+        }
       }
 
       for (let j = 0; j < commune.packages.length; j++) {
@@ -165,10 +204,6 @@ export default function MultipleScreen() {
       shopId: user.shops[0]?.id,
     };
 
-    payload.parcelsInMultiple.forEach((p) => {
-      console.log(p.packages);
-    });
-
     try {
       const response = await fetch(`${config.API_BASE_URL}/requests/multiple`, {
         method: "POST",
@@ -197,53 +232,74 @@ export default function MultipleScreen() {
       setLoading(false);
     }
   };
+
   return (
     <View className="flex-1 mt-4">
       <ScrollView className="mb-44">
         {/* Pickup section */}
         <Text className="my-4 text-orange text-lg">Lieu de récupération</Text>
-        <View className="space-y-3">
-          <View className="bg-grayLight rounded-md">
-            <Picker
-              selectedValue={communePickup}
-              onValueChange={setCommunePickup}
-              className="border rounded-md text-lg"
-            >
-              <Picker.Item label="Sélectionner une commune" value="" />
-              {communes.map((commune) => (
-                <Picker.Item
-                  label={commune.name}
-                  value={commune.name}
-                  key={commune.name}
-                />
-              ))}
-            </Picker>
+        <View className="flex-row items-center space-x-3 my-4">
+          <Pressable
+            className={`w-6 h-6 border-2 ${
+              useShopAddress ? "border-orange" : "border-gray-400"
+            } rounded-md justify-center items-center`}
+            onPress={() => setUseShopAddress(!useShopAddress)}
+          >
+            {useShopAddress && <Text className="text-orange">✓</Text>}
+          </Pressable>
+          <Text>Utiliser l'adresse de mon magasin</Text>
+        </View>
+
+        {/* Show shop address if selected */}
+        {useShopAddress ? (
+          <View className="bg-grayLight p-3 rounded-md">
+            <Text className="text-lg text-black">
+              {user.shops[0]?.commune}, {user.shops[0]?.quartier}
+            </Text>
           </View>
-          {communePickup && (
+        ) : (
+          <View className="space-y-3">
             <View className="bg-grayLight rounded-md">
               <Picker
-                selectedValue={quartierPickup}
-                onValueChange={setQuartierPickup}
+                selectedValue={communePickup}
+                onValueChange={setCommunePickup}
                 className="border rounded-md text-lg"
               >
-                <Picker.Item label="Sélectionner un quartier" value="" />
-                {communes
-                  .find((c) => c.name === communePickup)
-                  ?.quartiers.map((quartier) => (
-                    <Picker.Item
-                      label={quartier}
-                      value={quartier}
-                      key={quartier}
-                    />
-                  ))}
+                <Picker.Item label="Sélectionner une commune" value="" />
+                {communes.map((commune) => (
+                  <Picker.Item
+                    label={commune.name}
+                    value={commune.name}
+                    key={commune.name}
+                  />
+                ))}
               </Picker>
             </View>
-          )}
-        </View>
+            {communePickup && (
+              <View className="bg-grayLight rounded-md">
+                <Picker
+                  selectedValue={quartierPickup}
+                  onValueChange={setQuartierPickup}
+                  className="border rounded-md text-lg"
+                >
+                  <Picker.Item label="Sélectionner un quartier" value="" />
+                  {communes
+                    .find((c) => c.name === communePickup)
+                    ?.quartiers.map((quartier) => (
+                      <Picker.Item
+                        label={quartier}
+                        value={quartier}
+                        key={quartier}
+                      />
+                    ))}
+                </Picker>
+              </View>
+            )}
+          </View>
+        )}
 
         {/* Add Commune Button */}
         <Text className="my-4 text-orange text-lg">Lieux de livraison</Text>
-
         <Pressable
           className="py-3 px-4 rounded-md my-4 bg-black"
           onPress={handleAddCommune}
@@ -289,32 +345,8 @@ export default function MultipleScreen() {
               </Picker>
             </View>
 
-            {/* Quartier Selection */}
-            <Text className="mt-2 mb-2 text-lg">Quartier</Text>
-            <View className="bg-grayLight rounded-md">
-              <Picker
-                selectedValue={communeItem.quartier}
-                onValueChange={(value) =>
-                  handleQuartierChange(communeIndex, value)
-                }
-                className="border rounded-md text-lg"
-              >
-                <Picker.Item label="Sélectionner un quartier" value="" />
-                {communes
-                  .find((c) => c.name === communeItem.commune)
-                  ?.quartiers.map((quartier) => (
-                    <Picker.Item
-                      label={quartier}
-                      value={quartier}
-                      key={quartier}
-                    />
-                  ))}
-              </Picker>
-            </View>
-
             {/* Packages for the selected commune */}
             <View className="mt-4">
-              {/* Add Package Button */}
               <Pressable
                 className="py-2 px-3 rounded-md bg-black"
                 onPress={() => handleAddPackage(communeIndex)}
@@ -324,7 +356,6 @@ export default function MultipleScreen() {
                 </Text>
               </Pressable>
 
-              {/* Loop through packages */}
               {communeItem.packages.map((pkg, pkgIndex) => (
                 <View key={pkgIndex} className="mt-4 p-3 border rounded-md">
                   {/* Remove Package Button */}
@@ -340,8 +371,6 @@ export default function MultipleScreen() {
                   </TouchableOpacity>
 
                   <Text className="font-bold mb-2">Colis {pkgIndex + 1}</Text>
-
-                  {/* Recipient Information */}
                   <TextInput
                     className="bg-grayLight py-3 px-4 rounded-md text-lg mt-2"
                     placeholder="Nom du destinataire"
@@ -369,51 +398,21 @@ export default function MultipleScreen() {
                       )
                     }
                   />
-
-                  {/* Collect Fee at Door */}
-                  <View className="flex-row items-center mt-4">
-                    <TouchableOpacity
-                      onPress={() =>
-                        handlePackageChange(
-                          communeIndex,
-                          pkgIndex,
-                          "collectAtDoor",
-                          !pkg.collectAtDoor
-                        )
-                      }
-                      className={`p-2 border rounded-md ${
-                        pkg.collectAtDoor ? "bg-black" : "bg-gray-400"
-                      }`}
-                    >
-                      <Text className="text-white">
-                        {pkg.collectAtDoor ? "Oui" : "Non"}
-                      </Text>
-                    </TouchableOpacity>
-                    <Text className="ml-3">Collecter les frais ?</Text>
-                  </View>
-
-                  {/* Fee Amount */}
-                  {pkg.collectAtDoor && (
-                    <TextInput
-                      className="bg-grayLight py-3 px-4 mt-4 rounded-md text-lg"
-                      placeholder="Montant des frais (en GNF)"
-                      keyboardType="numeric"
-                      value={pkg.feeAmount}
-                      onChangeText={(value) =>
-                        handlePackageChange(
-                          communeIndex,
-                          pkgIndex,
-                          "feeAmount",
-                          value
-                        )
-                      }
-                    />
-                  )}
                 </View>
               ))}
             </View>
           </View>
         ))}
+
+        {/* Delivery Cost Box */}
+        <View className="mt-4 p-3 bg-gray-100 rounded-md">
+          <Text className="text-lg font-semibold text-black">
+            Coût total de la livraison
+          </Text>
+          <Text className="text-xl font-bold text-orange mt-1">
+            {totalPrice.toLocaleString()} GNF
+          </Text>
+        </View>
 
         {/* Submit Button */}
         {loading ? (

@@ -50,6 +50,7 @@ export default function SingleScreen() {
   const [collectAtDoor, setCollectAtDoor] = useState<boolean>(false);
   const [feeAmount, setFeeAmount] = useState<string>("");
 
+  const [useShopAddress, setUseShopAddress] = useState<boolean>(false); // NEW: toggle for shop address
   const [loading, setLoading] = React.useState(false);
 
   const navigation = useNavigation();
@@ -58,6 +59,18 @@ export default function SingleScreen() {
     navigation.setOptions({ tabBarVisible: false });
   }, []);
 
+  // Update the address and price calculation based on shop address toggle
+  useEffect(() => {
+    if (useShopAddress && user.shops[0]) {
+      setCommunePickup(user.shops[0].commune); // Automatically fill in shop commune
+      setQuartierPickup(user.shops[0].quartier); // Automatically fill in shop quartier
+    } else {
+      setCommunePickup("");
+      setQuartierPickup("");
+    }
+  }, [useShopAddress]);
+
+  // Calculate price when addresses change
   useEffect(() => {
     if (communePickup && communeDelivery) {
       const calculatedFee = calculateDeliveryFee({
@@ -119,7 +132,7 @@ export default function SingleScreen() {
       name: name.trim(),
       description: description.trim(),
       parcelType: "SINGLE",
-      senderCommune: communePickup,
+      senderCommune: communePickup, // Pickup address based on shop or manual input
       senderQuartier: quartierPickup,
       pickupDate: formattedPickupDateTime,
       pickupTime: pickupTime.toLocaleTimeString([], {
@@ -133,8 +146,8 @@ export default function SingleScreen() {
         hour: "2-digit",
         minute: "2-digit",
       }),
-      recipientName: recipientName.trim(), // Added recipient name
-      recipientPhone: recipientPhone.trim(), // Added recipient phone
+      recipientName: recipientName.trim(),
+      recipientPhone: recipientPhone.trim(),
       isFeeAtDoor: collectAtDoor,
       feeAtDoor: collectAtDoor ? Number(feeAmount) : 0,
       shopId: user.shops[0]?.id || "", // Safe access with fallback
@@ -216,45 +229,68 @@ export default function SingleScreen() {
           />
         </View>
 
+        {/* Pickup Information */}
         <Text className="my-4 text-orange text-lg">Lieu de récupération</Text>
-        <View className="space-y-3">
-          <View className="bg-grayLight rounded-md">
-            <Picker
-              selectedValue={communePickup}
-              onValueChange={setCommunePickup}
-              className="border rounded-md text-lg"
-            >
-              <Picker.Item label="Sélectionner une commune" value="" />
-              {communes.map((commune) => (
-                <Picker.Item
-                  label={commune.name}
-                  value={commune.name}
-                  key={commune.name}
-                />
-              ))}
-            </Picker>
+        <View className="flex-row items-center space-x-3 my-4">
+          <Pressable
+            className={`w-6 h-6 border-2 ${
+              useShopAddress ? "border-orange" : "border-gray-400"
+            } rounded-md justify-center items-center`}
+            onPress={() => setUseShopAddress(!useShopAddress)}
+          >
+            {useShopAddress && <Text className="text-orange">✓</Text>}
+          </Pressable>
+          <Text>Utiliser l'adresse de mon magasin</Text>
+        </View>
+
+        {/* If using shop address, display it */}
+        {useShopAddress ? (
+          <View className="bg-grayLight p-3 rounded-md">
+            <Text className="text-lg text-black">
+              {user.shops[0]?.commune}, {user.shops[0]?.quartier}
+            </Text>
           </View>
-          {communePickup && (
+        ) : (
+          // Show inputs if not using shop address
+          <View className="space-y-3">
             <View className="bg-grayLight rounded-md">
               <Picker
-                selectedValue={quartierPickup}
-                onValueChange={setQuartierPickup}
+                selectedValue={communePickup}
+                onValueChange={setCommunePickup}
                 className="border rounded-md text-lg"
               >
-                <Picker.Item label="Sélectionner un quartier" value="" />
-                {communes
-                  .find((c) => c.name === communePickup)
-                  ?.quartiers.map((quartier) => (
-                    <Picker.Item
-                      label={quartier}
-                      value={quartier}
-                      key={quartier}
-                    />
-                  ))}
+                <Picker.Item label="Sélectionner une commune" value="" />
+                {communes.map((commune) => (
+                  <Picker.Item
+                    label={commune.name}
+                    value={commune.name}
+                    key={commune.name}
+                  />
+                ))}
               </Picker>
             </View>
-          )}
-        </View>
+            {communePickup && (
+              <View className="bg-grayLight rounded-md">
+                <Picker
+                  selectedValue={quartierPickup}
+                  onValueChange={setQuartierPickup}
+                  className="border rounded-md text-lg"
+                >
+                  <Picker.Item label="Sélectionner un quartier" value="" />
+                  {communes
+                    .find((c) => c.name === communePickup)
+                    ?.quartiers.map((quartier) => (
+                      <Picker.Item
+                        label={quartier}
+                        value={quartier}
+                        key={quartier}
+                      />
+                    ))}
+                </Picker>
+              </View>
+            )}
+          </View>
+        )}
 
         {/* Date and Time Pickers for Pickup */}
         <View className="mt-3 flex flex-row space-x-3">
