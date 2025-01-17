@@ -18,7 +18,7 @@ const styles = StyleSheet.create({
   },
   circle: {
     position: "absolute",
-    top: "50%",
+    top: "-8%",
     left: "50%",
     width: 600,
     height: 610,

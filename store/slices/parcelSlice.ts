@@ -1,4 +1,4 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createSelector, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { Parcel, ParcelStatus } from "@/utils/types"; // Ensure Parcel type has createdAt
 
 interface ParcelState {
@@ -89,13 +89,12 @@ const parcelSlice = createSlice({
 // Selectors
 
 // 1. Selector for Parcel History (last 3 parcels of any status)
-export const selectThreeMostRecentParcels = (state: {
-  parcels: ParcelState;
-}) => {
-  // Since the parcels are already sorted in descending order from DB, just slice
-  return state.parcels.parcels.slice(0, 3);
-};
-
+export const selectThreeMostRecentParcels = createSelector(
+  // Input selector: Extract the parcels array from the state
+  (state: { parcels: ParcelState }) => state.parcels.parcels,
+  // Output selector: Return the first three parcels
+  (parcels) => parcels.slice(0, 3)
+);
 // 2. Selector for the most recent parcel with 'IN_TRANSIT' status
 export const selectMostRecentInTransitParcel = (state: {
   parcels: ParcelState;
