@@ -59,6 +59,7 @@ const Home = () => {
       const userResponse = await axios.get<User>(
         `${config.API_BASE_URL}/users/${phone}`
       );
+      console.log(config.API_BASE_URL);
       const userData = userResponse.data;
       setUserData(userData);
 

@@ -55,10 +55,6 @@ export default function SingleScreen() {
 
   const navigation = useNavigation();
 
-  useEffect(() => {
-    navigation.setOptions({ tabBarVisible: false });
-  }, []);
-
   // Update the address and price calculation based on shop address toggle
   useEffect(() => {
     if (useShopAddress && user.shops[0]) {

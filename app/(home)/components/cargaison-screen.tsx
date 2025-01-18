@@ -42,10 +42,6 @@ export default function CargaisonScreen() {
   const navigation = useNavigation();
   const user = useSelector((state: RootState) => state.auth);
 
-  useEffect(() => {
-    navigation.setOptions({ tabBarVisible: false });
-  }, []);
-
   // Handlers for date and time pickers
   //@ts-ignore
   const onPickupDateChange = (event, selectedDate) => {
